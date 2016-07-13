@@ -1,0 +1,5 @@
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\build\bin\net\1.0\debug\log4net.dll
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\build\bin\net\1.0\debug\log4net.pdb
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\build\bin\net\1.0\debug\log4net.xml
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\src\obj\Debug\log4net.dll
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\src\obj\Debug\log4net.pdb
