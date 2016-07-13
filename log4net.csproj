@@ -82,7 +82,7 @@
   <ItemGroup>
     <Reference Include="nunit.framework">
       <Name>nunit.framework</Name>
-      <HintPath>..\build\lib\nant\nunit.framework.dll</HintPath>
+      <HintPath>build\lib\nant\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>
