@@ -1,0 +1,7 @@
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\log4netUnitTest\bin\Debug\log4netUnitTest.dll
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\log4netUnitTest\bin\Debug\log4netUnitTest.pdb
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\log4netUnitTest\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\log4netUnitTest\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.xml
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\log4netUnitTest\obj\Debug\log4netUnitTest.csprojResolveAssemblyReference.cache
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\log4netUnitTest\obj\Debug\log4netUnitTest.dll
+C:\Users\Dylan\Documents\PennStateSoftwareEngineering\Software Testing\log4net-1.2.0-beta8\log4net-1.2.0-beta8\log4netUnitTest\obj\Debug\log4netUnitTest.pdb
