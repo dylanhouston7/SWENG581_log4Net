@@ -1,12 +1,20 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
@@ -18,6 +26,12 @@ namespace log4net
 	/// Implementation of Mapped Diagnostic Contexts.
 	/// </summary>
 	/// <remarks>
+	/// <note>
+	/// <para>
+	/// The MDC is deprecated and has been replaced by the <see cref="ThreadContext.Properties"/>.
+	/// The current MDC implementation forwards to the <c>ThreadContext.Properties</c>.
+	/// </para>
+	/// </note>
 	/// <para>
 	/// The MDC class is similar to the <see cref="NDC"/> class except that it is
 	/// based on a map instead of a stack. It provides <i>mapped
@@ -30,6 +44,10 @@ namespace log4net
 	/// The MDC is managed on a per thread basis.
 	/// </para>
 	/// </remarks>
+	/// <threadsafety static="true" instance="true" />
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
+	/*[Obsolete("MDC has been replaced by ThreadContext.Properties")]*/
 	public sealed class MDC
 	{
 		#region Private Instance Constructors
@@ -49,122 +67,103 @@ namespace log4net
 		#region Public Static Methods
 
 		/// <summary>
-		/// Gets the context identified by the <paramref name="key" /> parameter.
+		/// Gets the context value identified by the <paramref name="key" /> parameter.
 		/// </summary>
-		/// <remarks>
-		/// If the <paramref name="key" /> parameter does not look up to a
-		/// previously defined context then <c>null</c> will be returned.
-		/// </remarks>
 		/// <param name="key">The key to lookup in the MDC.</param>
 		/// <returns>The string value held for the key, or a <c>null</c> reference if no corresponding value is found.</returns>
+		/// <remarks>
+		/// <note>
+		/// <para>
+		/// The MDC is deprecated and has been replaced by the <see cref="ThreadContext.Properties"/>.
+		/// The current MDC implementation forwards to the <c>ThreadContext.Properties</c>.
+		/// </para>
+		/// </note>
+		/// <para>
+		/// If the <paramref name="key" /> parameter does not look up to a
+		/// previously defined context then <c>null</c> will be returned.
+		/// </para>
+		/// </remarks>
+		/*[Obsolete("MDC has been replaced by ThreadContext.Properties")]*/
 		public static string Get(string key)
 		{
-			if (key == null)
+			object obj = ThreadContext.Properties[key];
+			if (obj == null)
 			{
-				throw new ArgumentNullException("key");
+				return null;
 			}
-			return GetMap()[key] as string;
+			return obj.ToString();
 		}
 
 		/// <summary>
-		/// Puts a context value (the <paramref name="val" /> parameter) as identified
-		/// with the <paramref name="key" /> parameter into the current thread's
-		/// context map.
+		/// Add an entry to the MDC
 		/// </summary>
-		/// <remarks>
-		/// If a value is already defined for the <paramref name="key" />
-		/// specified then the value will be replaced.  If the <paramref name="val" /> 
-		/// is specified as <c>null</c> then the key value mapping will be removed.
-		/// </remarks>
 		/// <param name="key">The key to store the value under.</param>
 		/// <param name="value">The value to store.</param>
+		/// <remarks>
+		/// <note>
+		/// <para>
+		/// The MDC is deprecated and has been replaced by the <see cref="ThreadContext.Properties"/>.
+		/// The current MDC implementation forwards to the <c>ThreadContext.Properties</c>.
+		/// </para>
+		/// </note>
+		/// <para>
+		/// Puts a context value (the <paramref name="value" /> parameter) as identified
+		/// with the <paramref name="key" /> parameter into the current thread's
+		/// context map.
+		/// </para>
+		/// <para>
+		/// If a value is already defined for the <paramref name="key" />
+		/// specified then the value will be replaced. If the <paramref name="value" /> 
+		/// is specified as <c>null</c> then the key value mapping will be removed.
+		/// </para>
+		/// </remarks>
+		/*[Obsolete("MDC has been replaced by ThreadContext.Properties")]*/
 		public static void Set(string key, string value)
 		{
-			if (key == null)
-			{
-				throw new ArgumentNullException("key");
-			}
-
-			if (value == null)
-			{
-				GetMap().Remove(key);
-			}
-			else
-			{
-				GetMap()[key] = value;
-			}
+			ThreadContext.Properties[key] = value;
 		}
 
 		/// <summary>
 		/// Removes the key value mapping for the key specified.
 		/// </summary>
 		/// <param name="key">The key to remove.</param>
+		/// <remarks>
+		/// <note>
+		/// <para>
+		/// The MDC is deprecated and has been replaced by the <see cref="ThreadContext.Properties"/>.
+		/// The current MDC implementation forwards to the <c>ThreadContext.Properties</c>.
+		/// </para>
+		/// </note>
+		/// <para>
+		/// Remove the specified entry from this thread's MDC
+		/// </para>
+		/// </remarks>
+		/*[Obsolete("MDC has been replaced by ThreadContext.Properties")]*/
 		public static void Remove(string key)
 		{
-			if (key == null)
-			{
-				throw new ArgumentNullException("key");
-			}
-
-			Set(key, null);
+			ThreadContext.Properties.Remove(key);
 		}
 
 		/// <summary>
 		/// Clear all entries in the MDC
 		/// </summary>
+		/// <remarks>
+		/// <note>
+		/// <para>
+		/// The MDC is deprecated and has been replaced by the <see cref="ThreadContext.Properties"/>.
+		/// The current MDC implementation forwards to the <c>ThreadContext.Properties</c>.
+		/// </para>
+		/// </note>
+		/// <para>
+		/// Remove all the entries from this thread's MDC
+		/// </para>
+		/// </remarks>
+		/*[Obsolete("MDC has been replaced by ThreadContext.Properties")]*/
 		public static void Clear()
 		{
-			Hashtable map = (Hashtable)System.Threading.Thread.GetData(s_slot);
-			if (map != null)
-			{
-				map.Clear();
-			}
+			ThreadContext.Properties.Clear();
 		}
 
 		#endregion Public Static Methods
-
-		#region Internal Static Methods
-
-		/// <summary>
-		/// Gets the map on this thread.
-		/// </summary>
-		/// <returns>The map on the current thread.</returns>
-		internal static IDictionary GetMap()
-		{
-			Hashtable map = (Hashtable)System.Threading.Thread.GetData(s_slot);
-			if (map == null)
-			{
-				map = new Hashtable();
-				System.Threading.Thread.SetData(s_slot, map);
-			}
-			return map;
-		}
-
-		/// <summary>
-		/// Gets a readonly copy of the map on this thread.
-		/// </summary>
-		/// <returns>A readonly copy of the map on the current thread.</returns>
-		internal static IDictionary CopyMap()
-		{
-			Hashtable map = (Hashtable)System.Threading.Thread.GetData(s_slot);
-			if (map == null)
-			{
-				return log4net.helpers.EmptyDictionary.Instance;
-			}
-
-			// Return a copy of the map
-			return (IDictionary)map.Clone();
-		}
-
-		#endregion Internal Static Methods
-
-		#region Private Static Fields
-
-		/// <summary>
-		/// The thread local data slot to use for context information.
-		/// </summary>
-		private readonly static LocalDataStoreSlot s_slot = System.Threading.Thread.AllocateDataSlot();
-
-		#endregion Private Static Fields
 	}
 }

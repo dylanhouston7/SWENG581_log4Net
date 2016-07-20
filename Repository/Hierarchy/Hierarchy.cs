@@ -1,19 +1,28 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
-
-using log4net.ObjectRenderer;
-using log4net.spi;
-using log4net.helpers;
+using System.Collections;
+using log4net.Appender;
+using log4net.Core;
+using log4net.Repository;
+using log4net.Util;
 
 namespace log4net.Repository.Hierarchy
 {
@@ -24,14 +33,21 @@ namespace log4net.Repository.Hierarchy
 	/// </summary>
 	/// <param name="sender">The <see cref="Hierarchy"/> in which the <see cref="Logger"/> has been created.</param>
 	/// <param name="e">The <see cref="LoggerCreationEventArgs"/> event args that hold the <see cref="Logger"/> instance that has been created.</param>
+	/// <remarks>
+	/// <para>
+	/// Delegate used to handle logger creation event notifications.
+	/// </para>
+	/// </remarks>
 	public delegate void LoggerCreationEventHandler(object sender, LoggerCreationEventArgs e);
 
 	/// <summary>
 	/// Provides data for the <see cref="Hierarchy.LoggerCreatedEvent"/> event.
 	/// </summary>
 	/// <remarks>
+	/// <para>
 	/// A <see cref="Hierarchy.LoggerCreatedEvent"/> event is raised every time a
 	/// <see cref="Logger"/> is created.
+	/// </para>
 	/// </remarks>
 	public class LoggerCreationEventArgs : EventArgs
 	{
@@ -41,10 +57,15 @@ namespace log4net.Repository.Hierarchy
 		private Logger m_log;
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="LoggerCreationEventArgs" /> event argument 
-		/// class,with the specified <see cref="Logger"/>.
+		/// Constructor
 		/// </summary>
 		/// <param name="log">The <see cref="Logger"/> that has been created.</param>
+		/// <remarks>
+		/// <para>
+		/// Initializes a new instance of the <see cref="LoggerCreationEventArgs" /> event argument 
+		/// class,with the specified <see cref="Logger"/>.
+		/// </para>
+		/// </remarks>
 		public LoggerCreationEventArgs(Logger log)
 		{
 			m_log = log;
@@ -56,6 +77,11 @@ namespace log4net.Repository.Hierarchy
 		/// <value>
 		/// The <see cref="Logger"/> that has been created.
 		/// </value>
+		/// <remarks>
+		/// <para>
+		/// The <see cref="Logger"/> that has been created.
+		/// </para>
+		/// </remarks>
 		public Logger Logger
 		{
 			get { return m_log; }
@@ -64,60 +90,51 @@ namespace log4net.Repository.Hierarchy
 
 	#endregion LoggerCreationEvent
 
-	#region HierarchyConfigurationChangedEvent
-
 	/// <summary>
-	/// Delegate used to handle event notifications for hierarchy configuration changes.
+	/// Hierarchical organization of loggers
 	/// </summary>
-	/// <param name="sender">The <see cref="Hierarchy"/> that has had its configuration changed.</param>
-	/// <param name="e">Empty event arguments.</param>
-	public delegate void HierarchyConfigurationChangedEventHandler(object sender, EventArgs e);
-
-	#endregion HierarchyConfigurationChangedEvent
-
-	/// <summary>
+	/// <remarks>
+	/// <para>
+	/// <i>The casual user should not have to deal with this class
+	/// directly.</i>
+	/// </para>
+	/// <para>
 	/// This class is specialized in retrieving loggers by name and
 	/// also maintaining the logger hierarchy. Implements the 
 	/// <see cref="ILoggerRepository"/> interface.
-	/// </summary>
-	/// <remarks>
-	/// <para><i>The casual user should not have to deal with this class
-	/// directly.</i></para>
-	/// 
-	/// <para>The structure of the logger hierarchy is maintained by the
-	/// <see cref="GetLogger"/> method. The hierarchy is such that children
+	/// </para>
+	/// <para>
+	/// The structure of the logger hierarchy is maintained by the
+	/// <see cref="M:GetLogger(string)"/> method. The hierarchy is such that children
 	/// link to their parent but parents do not have any references to their
 	/// children. Moreover, loggers can be instantiated in any order, in
-	/// particular descendant before ancestor.</para>
-	/// 
-	/// <para>In case a descendant is created before a particular ancestor,
+	/// particular descendant before ancestor.
+	/// </para>
+	/// <para>
+	/// In case a descendant is created before a particular ancestor,
 	/// then it creates a provision node for the ancestor and adds itself
 	/// to the provision node. Other descendants of the same ancestor add
-	/// themselves to the previously created provision node.</para>
+	/// themselves to the previously created provision node.
+	/// </para>
 	/// </remarks>
-	public class Hierarchy : LoggerRepositorySkeleton, IBasicRepositoryConfigurator, IDOMRepositoryConfigurator
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
+	public class Hierarchy : LoggerRepositorySkeleton, IBasicRepositoryConfigurator, IXmlRepositoryConfigurator
 	{
 		#region Public Events
 
 		/// <summary>
 		/// Event used to notify that a logger has been created.
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// Event raised when a logger is created.
+		/// </para>
+		/// </remarks>
 		public event LoggerCreationEventHandler LoggerCreatedEvent
 		{
 			add { m_loggerCreatedEvent += value; }
 			remove { m_loggerCreatedEvent -= value; }
-		}
-
-		/// <summary>
-		/// Event to notify that the hierarchy has had its configuration changed.
-		/// </summary>
-		/// <value>
-		/// Event to notify that the hierarchy has had its configuration changed.
-		/// </value>
-		public event HierarchyConfigurationChangedEventHandler ConfigurationChangedEvent
-		{
-			add { m_configurationChangedEvent += value; }
-			remove { m_configurationChangedEvent -= value; }
 		}
 
 		#endregion Public Events
@@ -125,36 +142,56 @@ namespace log4net.Repository.Hierarchy
 		#region Public Instance Constructors
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="Hierarchy" /> class.
+		/// Default constructor
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// Initializes a new instance of the <see cref="Hierarchy" /> class.
+		/// </para>
+		/// </remarks>
 		public Hierarchy() : this(new DefaultLoggerFactory())
 		{
 		}
 
 		/// <summary>
+		/// Construct with properties
+		/// </summary>
+		/// <param name="properties">The properties to pass to this repository.</param>
+		/// <remarks>
+		/// <para>
 		/// Initializes a new instance of the <see cref="Hierarchy" /> class.
-		/// </summary>
-		/// <param name="properties">The properties to pass to this repository.</param>
-		public Hierarchy(PropertiesCollection properties) : this(properties, new DefaultLoggerFactory())
+		/// </para>
+		/// </remarks>
+		public Hierarchy(PropertiesDictionary properties) : this(properties, new DefaultLoggerFactory())
 		{
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="Hierarchy" /> class with 
-		/// the specified <see cref="ILoggerFactory" />.
+		/// Construct with a logger factory
 		/// </summary>
 		/// <param name="loggerFactory">The factory to use to create new logger instances.</param>
-		public Hierarchy(ILoggerFactory loggerFactory) : this(new PropertiesCollection(), loggerFactory)
+		/// <remarks>
+		/// <para>
+		/// Initializes a new instance of the <see cref="Hierarchy" /> class with 
+		/// the specified <see cref="ILoggerFactory" />.
+		/// </para>
+		/// </remarks>
+		public Hierarchy(ILoggerFactory loggerFactory) : this(new PropertiesDictionary(), loggerFactory)
 		{
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="Hierarchy" /> class with 
-		/// the specified <see cref="ILoggerFactory" />.
+		/// Construct with properties and a logger factory
 		/// </summary>
 		/// <param name="properties">The properties to pass to this repository.</param>
 		/// <param name="loggerFactory">The factory to use to create new logger instances.</param>
-		public Hierarchy(PropertiesCollection properties, ILoggerFactory loggerFactory) : base(properties)
+		/// <remarks>
+		/// <para>
+		/// Initializes a new instance of the <see cref="Hierarchy" /> class with 
+		/// the specified <see cref="ILoggerFactory" />.
+		/// </para>
+		/// </remarks>
+		public Hierarchy(PropertiesDictionary properties, ILoggerFactory loggerFactory) : base(properties)
 		{
 			if (loggerFactory == null)
 			{
@@ -164,9 +201,6 @@ namespace log4net.Repository.Hierarchy
 			m_defaultFactory = loggerFactory;
 
 			m_ht = System.Collections.Hashtable.Synchronized(new System.Collections.Hashtable());
-			m_root = new RootLogger(Level.DEBUG);
-
-			m_root.Hierarchy = this;
 		}
 
 		#endregion Public Instance Constructors
@@ -174,9 +208,14 @@ namespace log4net.Repository.Hierarchy
 		#region Public Instance Properties
 
 		/// <summary>
+		/// Has no appender warning been emitted
+		/// </summary>
+		/// <remarks>
+		/// <para>
 		/// Flag to indicate if we have already issued a warning
 		/// about not having an appender warning.
-		/// </summary>
+		/// </para>
+		/// </remarks>
 		public bool EmittedNoAppenderWarning
 		{
 			get { return m_emittedNoAppenderWarning; }
@@ -184,17 +223,45 @@ namespace log4net.Repository.Hierarchy
 		}
 
 		/// <summary>
-		/// Gets the root of this hierarchy.
+		/// Get the root of this hierarchy
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// Get the root of this hierarchy.
+		/// </para>
+		/// </remarks>
 		public Logger Root
 		{
-			get { return m_root; }
+			get 
+			{ 
+				if (m_root == null)
+				{
+					lock(this)
+					{
+						if (m_root == null)
+						{
+							// Create the root logger
+							Logger root = m_defaultFactory.CreateLogger(this, null);
+							root.Hierarchy = this;
+
+							// Store root
+							m_root = root;
+						}
+					}
+				}
+				return m_root; 
+			}
 		}
 
 		/// <summary>
 		/// Gets or sets the default <see cref="ILoggerFactory" /> instance.
 		/// </summary>
-		/// <value>The default <see cref="ILoggerFactory" />.</value>
+		/// <value>The default <see cref="ILoggerFactory" /></value>
+		/// <remarks>
+		/// <para>
+		/// The logger factory is used to create logger instances.
+		/// </para>
+		/// </remarks>
 		public ILoggerFactory LoggerFactory
 		{
 			get { return m_defaultFactory; }
@@ -213,11 +280,16 @@ namespace log4net.Repository.Hierarchy
 		#region Override Implementation of LoggerRepositorySkeleton
 
 		/// <summary>
-		/// Check if the named logger exists in the hierarchy. If so return
-		/// its reference, otherwise returns <c>null</c>.
+		/// Test if a logger exists
 		/// </summary>
 		/// <param name="name">The name of the logger to lookup</param>
 		/// <returns>The Logger object with the name specified</returns>
+		/// <remarks>
+		/// <para>
+		/// Check if the named logger exists in the hierarchy. If so return
+		/// its reference, otherwise returns <c>null</c>.
+		/// </para>
+		/// </remarks>
 		override public ILogger Exists(string name) 
 		{	
 			if (name == null)
@@ -231,12 +303,14 @@ namespace log4net.Repository.Hierarchy
 		/// <summary>
 		/// Returns all the currently defined loggers in the hierarchy as an Array
 		/// </summary>
+		/// <returns>All the defined loggers</returns>
 		/// <remarks>
+		/// <para>
 		/// Returns all the currently defined loggers in the hierarchy as an Array.
 		/// The root logger is <b>not</b> included in the returned
 		/// enumeration.
+		/// </para>
 		/// </remarks>
-		/// <returns>All the defined loggers</returns>
 		override public ILogger[] GetCurrentLoggers() 
 		{
 			// The accumulation in loggers is necessary because not all elements in
@@ -260,12 +334,15 @@ namespace log4net.Repository.Hierarchy
 		/// the default factory.
 		/// </summary>
 		/// <remarks>
+		/// <para>
 		/// Return a new logger instance named as the first parameter using
 		/// the default factory.
-		/// 
-		/// <para>If a logger of that name already exists, then it will be
+		/// </para>
+		/// <para>
+		/// If a logger of that name already exists, then it will be
 		/// returned.  Otherwise, a new logger will be instantiated and
-		/// then linked with its existing ancestors as well as children.</para>
+		/// then linked with its existing ancestors as well as children.
+		/// </para>
 		/// </remarks>
 		/// <param name="name">The name of the logger to retrieve</param>
 		/// <returns>The logger object with the name specified</returns>
@@ -284,36 +361,44 @@ namespace log4net.Repository.Hierarchy
 		/// all appenders in all loggers including the root logger.
 		/// </summary>
 		/// <remarks>
+		/// <para>
 		/// Shutting down a hierarchy will <i>safely</i> close and remove
 		/// all appenders in all loggers including the root logger.
-		/// 
-		/// <para>Some appenders need to be closed before the
+		/// </para>
+		/// <para>
+		/// Some appenders need to be closed before the
 		/// application exists. Otherwise, pending logging events might be
-		/// lost.</para>
-		/// 
-		/// <para>The <c>Shutdown</c> method is careful to close nested
+		/// lost.
+		/// </para>
+		/// <para>
+		/// The <c>Shutdown</c> method is careful to close nested
 		/// appenders before closing regular appenders. This is allows
 		/// configurations where a regular appender is attached to a logger
-		/// and again to a nested appender.</para>
+		/// and again to a nested appender.
+		/// </para>
 		/// </remarks>
 		override public void Shutdown() 
 		{
+			LogLog.Debug(declaringType, "Shutdown called on Hierarchy ["+this.Name+"]");
+
 			// begin by closing nested appenders
 			Root.CloseNestedAppenders();
 
 			lock(m_ht) 
 			{
-				foreach(Logger l in this.GetCurrentLoggers())
+				ILogger[] currentLoggers = this.GetCurrentLoggers();
+
+				foreach(Logger logger in currentLoggers)
 				{
-					l.CloseNestedAppenders();
+					logger.CloseNestedAppenders();
 				}
 
 				// then, remove all appenders
 				Root.RemoveAllAppenders();
 
-				foreach(Logger l in this.GetCurrentLoggers())
+				foreach(Logger logger in currentLoggers)
 				{
-					l.RemoveAllAppenders();
+					logger.RemoveAllAppenders();
 				}
 			}
 
@@ -324,22 +409,26 @@ namespace log4net.Repository.Hierarchy
 		/// Reset all values contained in this hierarchy instance to their default.
 		/// </summary>
 		/// <remarks>
+		/// <para>
 		/// Reset all values contained in this hierarchy instance to their
 		/// default.  This removes all appenders from all loggers, sets
 		/// the level of all non-root loggers to <c>null</c>,
 		/// sets their additivity flag to <c>true</c> and sets the level
-		/// of the root logger to <see cref="Level.DEBUG"/>. Moreover,
+		/// of the root logger to <see cref="Level.Debug"/>. Moreover,
 		/// message disabling is set its default "off" value.
-		/// 
-		/// <para>Existing loggers are not removed. They are just reset.</para>
-		/// 
-		/// <para>This method should be used sparingly and with care as it will
-		/// block all logging until it is completed.</para>
+		/// </para>
+		/// <para>
+		/// Existing loggers are not removed. They are just reset.
+		/// </para>
+		/// <para>
+		/// This method should be used sparingly and with care as it will
+		/// block all logging until it is completed.
+		/// </para>
 		/// </remarks>
 		override public void ResetConfiguration() 
 		{
-			Root.Level = Level.DEBUG;
-			Threshold = Level.ALL;
+			Root.Level = LevelMap.LookupWithDefault(Level.Debug);
+			Threshold = LevelMap.LookupWithDefault(Level.All);
 	
 			// the synchronization is needed to prevent hashtable surprises
 			lock(m_ht) 
@@ -354,6 +443,9 @@ namespace log4net.Repository.Hierarchy
 			}
 
 			base.ResetConfiguration();
+
+			// Notify listeners
+			OnConfigurationChanged(null);
 		}
 
 		/// <summary>
@@ -365,7 +457,7 @@ namespace log4net.Repository.Hierarchy
 		/// This method should not normally be used to log.
 		/// The <see cref="ILog"/> interface should be used 
 		/// for routine logging. This interface can be obtained
-		/// using the <see cref="log4net.LogManager.GetLogger(string)"/> method.
+		/// using the <see cref="M:log4net.LogManager.GetLogger(string)"/> method.
 		/// </para>
 		/// <para>
 		/// The <c>logEvent</c> is delivered to the appropriate logger and
@@ -382,44 +474,167 @@ namespace log4net.Repository.Hierarchy
 			this.GetLogger(logEvent.LoggerName, m_defaultFactory).Log(logEvent);
 		}
 
+		/// <summary>
+		/// Returns all the Appenders that are currently configured
+		/// </summary>
+		/// <returns>An array containing all the currently configured appenders</returns>
+		/// <remarks>
+		/// <para>
+		/// Returns all the <see cref="log4net.Appender.IAppender"/> instances that are currently configured.
+		/// All the loggers are searched for appenders. The appenders may also be containers
+		/// for appenders and these are also searched for additional loggers.
+		/// </para>
+		/// <para>
+		/// The list returned is unordered but does not contain duplicates.
+		/// </para>
+		/// </remarks>
+		override public Appender.IAppender[] GetAppenders()
+		{
+			System.Collections.ArrayList appenderList = new System.Collections.ArrayList();
+
+			CollectAppenders(appenderList, Root);
+
+			foreach(Logger logger in GetCurrentLoggers())
+			{
+				CollectAppenders(appenderList, logger);
+			}
+
+			return (Appender.IAppender[])appenderList.ToArray(typeof(Appender.IAppender));
+		}
+
 		#endregion Override Implementation of LoggerRepositorySkeleton
 
-		#region Implementation of IBasicRepositoryConfigurator
+        #region Private Static Methods
+
+        /// <summary>
+		/// Collect the appenders from an <see cref="IAppenderAttachable"/>.
+		/// The appender may also be a container.
+		/// </summary>
+		/// <param name="appenderList"></param>
+		/// <param name="appender"></param>
+		private static void CollectAppender(System.Collections.ArrayList appenderList, Appender.IAppender appender)
+		{
+			if (!appenderList.Contains(appender))
+			{
+				appenderList.Add(appender);
+
+				IAppenderAttachable container = appender as IAppenderAttachable;
+				if (container != null)
+				{
+					CollectAppenders(appenderList, container);
+				}
+			}
+		}
 
 		/// <summary>
-		/// Initialise the log4net system using the specified appender
+		/// Collect the appenders from an <see cref="IAppenderAttachable"/> container
+		/// </summary>
+		/// <param name="appenderList"></param>
+		/// <param name="container"></param>
+		private static void CollectAppenders(System.Collections.ArrayList appenderList, IAppenderAttachable container)
+		{
+			foreach(Appender.IAppender appender in container.Appenders)
+			{
+				CollectAppender(appenderList, appender);
+			}
+        }
+
+        #endregion
+
+        #region Implementation of IBasicRepositoryConfigurator
+
+        /// <summary>
+		/// Initialize the log4net system using the specified appender
 		/// </summary>
 		/// <param name="appender">the appender to use to log all logging events</param>
-		void IBasicRepositoryConfigurator.Configure(log4net.Appender.IAppender appender)
+		void IBasicRepositoryConfigurator.Configure(IAppender appender)
 		{
-			Root.AddAppender(appender);
-
-			Configured = true;
-
-			// Notify listeners
-			FireConfigurationChangedEvent();
+			BasicRepositoryConfigure(appender);
 		}
 
-		#endregion Implementation of IBasicRepositoryConfigurator
-
-		#region Implementation of IDOMRepositoryConfigurator
+        /// <summary>
+        /// Initialize the log4net system using the specified appenders
+        /// </summary>
+        /// <param name="appenders">the appenders to use to log all logging events</param>
+        void IBasicRepositoryConfigurator.Configure(params IAppender[] appenders)
+        {
+            BasicRepositoryConfigure(appenders);
+        }
 
 		/// <summary>
-		/// Initialise the log4net system using the specified config
+		/// Initialize the log4net system using the specified appenders
 		/// </summary>
-		/// <param name="element">the element containing the root of the config</param>
-		void IDOMRepositoryConfigurator.Configure(System.Xml.XmlElement element)
+		/// <param name="appenders">the appenders to use to log all logging events</param>
+		/// <remarks>
+		/// <para>
+		/// This method provides the same functionality as the 
+		/// <see cref="M:IBasicRepositoryConfigurator.Configure(IAppender)"/> method implemented
+		/// on this object, but it is protected and therefore can be called by subclasses.
+		/// </para>
+		/// </remarks>
+		protected void BasicRepositoryConfigure(params IAppender[] appenders)
 		{
-			DOMHierarchyConfigurator config = new DOMHierarchyConfigurator(this);
-			config.Configure(element);
+            ArrayList configurationMessages = new ArrayList();
 
-			Configured = true;
+            using (new LogLog.LogReceivedAdapter(configurationMessages))
+            {
+                foreach (IAppender appender in appenders)
+                {
+                    Root.AddAppender(appender);
+                }
+            }
+
+		    Configured = true;
+
+            ConfigurationMessages = configurationMessages;
 
 			// Notify listeners
-			FireConfigurationChangedEvent();
+            OnConfigurationChanged(new ConfigurationChangedEventArgs(configurationMessages));
 		}
 
-		#endregion Implementation of IDOMRepositoryConfigurator
+	    #endregion Implementation of IBasicRepositoryConfigurator
+
+		#region Implementation of IXmlRepositoryConfigurator
+
+		/// <summary>
+		/// Initialize the log4net system using the specified config
+		/// </summary>
+		/// <param name="element">the element containing the root of the config</param>
+		void IXmlRepositoryConfigurator.Configure(System.Xml.XmlElement element)
+		{
+			XmlRepositoryConfigure(element);
+		}
+
+		/// <summary>
+		/// Initialize the log4net system using the specified config
+		/// </summary>
+		/// <param name="element">the element containing the root of the config</param>
+		/// <remarks>
+		/// <para>
+		/// This method provides the same functionality as the 
+		/// <see cref="M:IBasicRepositoryConfigurator.Configure(IAppender)"/> method implemented
+		/// on this object, but it is protected and therefore can be called by subclasses.
+		/// </para>
+		/// </remarks>
+		protected void XmlRepositoryConfigure(System.Xml.XmlElement element)
+		{
+            ArrayList configurationMessages = new ArrayList();
+
+            using (new LogLog.LogReceivedAdapter(configurationMessages))
+		    {
+		        XmlHierarchyConfigurator config = new XmlHierarchyConfigurator(this);
+                config.Configure(element);
+		    }
+
+		    Configured = true;
+
+            ConfigurationMessages = configurationMessages;
+
+			// Notify listeners
+            OnConfigurationChanged(new ConfigurationChangedEventArgs(configurationMessages));
+		}
+
+		#endregion Implementation of IXmlRepositoryConfigurator
 
 		#region Public Instance Methods
 
@@ -446,7 +661,8 @@ namespace log4net.Repository.Hierarchy
 		/// </remarks>
 		public bool IsDisabled(Level level) 
 		{
-			if (level == null)
+			// Cast level to object for performance
+			if ((object)level == null)
 			{
 				throw new ArgumentNullException("level");
 			}
@@ -457,7 +673,7 @@ namespace log4net.Repository.Hierarchy
 			}
 			else
 			{
-				// If not configured the hierarchy is effectivly disabled
+				// If not configured the hierarchy is effectively disabled
 				return true;
 			}
 		}
@@ -466,12 +682,15 @@ namespace log4net.Repository.Hierarchy
 		/// Clear all logger definitions from the internal hashtable
 		/// </summary>
 		/// <remarks>
+		/// <para>
 		/// This call will clear all logger definitions from the internal
 		/// hashtable. Invoking this method will irrevocably mess up the
 		/// logger hierarchy.
-		/// 
-		/// <para>You should <b>really</b> know what you are doing before
-		/// invoking this method.</para>
+		/// </para>
+		/// <para>
+		/// You should <b>really</b> know what you are doing before
+		/// invoking this method.
+		/// </para>
 		/// </remarks>
 		public void Clear() 
 		{
@@ -482,15 +701,17 @@ namespace log4net.Repository.Hierarchy
 		/// Return a new logger instance named as the first parameter using
 		/// <paramref name="factory"/>.
 		/// </summary>
+		/// <param name="name">The name of the logger to retrieve</param>
+		/// <param name="factory">The factory that will make the new logger instance</param>
+		/// <returns>The logger object with the name specified</returns>
 		/// <remarks>
+		/// <para>
 		/// If a logger of that name already exists, then it will be
 		/// returned. Otherwise, a new logger will be instantiated by the
 		/// <paramref name="factory"/> parameter and linked with its existing
 		/// ancestors as well as children.
+		/// </para>
 		/// </remarks>
-		/// <param name="name">The name of the logger to retrieve</param>
-		/// <param name="factory">The factory that will make the new logger instance</param>
-		/// <returns>The logger object with the name specified</returns>
 		public Logger GetLogger(string name, ILoggerFactory factory) 
 		{
 			if (name == null)
@@ -507,39 +728,42 @@ namespace log4net.Repository.Hierarchy
 			// Synchronize to prevent write conflicts. Read conflicts (in
 			// GetEffectiveLevel() method) are possible only if variable
 			// assignments are non-atomic.
-			Logger logger;
-	
+
 			lock(m_ht) 
 			{
+				Logger logger = null;
+
 				Object node = m_ht[key];
 				if (node == null) 
 				{
-					logger = factory.MakeNewLoggerInstance(name);
+					logger = factory.CreateLogger(this, name);
 					logger.Hierarchy = this;
 					m_ht[key] = logger;	  
 					UpdateParents(logger);
-					FireLoggerCreationEvent(logger);
+					OnLoggerCreationEvent(logger);
 					return logger;
 				} 
-				else if (node is Logger) 
+				
+				Logger nodeLogger = node as Logger;
+				if (nodeLogger != null) 
 				{
-					return (Logger)node;
+					return nodeLogger;
 				} 
-				else if (node is ProvisionNode) 
+				
+				ProvisionNode nodeProvisionNode = node as ProvisionNode;
+				if (nodeProvisionNode != null) 
 				{
-					logger = factory.MakeNewLoggerInstance(name);
+					logger = factory.CreateLogger(this, name);
 					logger.Hierarchy = this; 
 					m_ht[key] = logger;
-					UpdateChildren((ProvisionNode)node, logger);
+					UpdateChildren(nodeProvisionNode, logger);
 					UpdateParents(logger);	
-					FireLoggerCreationEvent(logger);
+					OnLoggerCreationEvent(logger);
 					return logger;
 				}
-				else 
-				{
-					// It should be impossible to arrive here
-					return null;  // but let's keep the compiler happy.
-				}
+
+				// It should be impossible to arrive here but let's keep the compiler happy.
+				return null;
 			}
 		}
 
@@ -548,13 +772,18 @@ namespace log4net.Repository.Hierarchy
 		#region Protected Instance Methods
 
 		/// <summary>
-		/// Notify the registered listeners that the hierarchy has had its configuration changed
+		/// Sends a logger creation event to all registered listeners
 		/// </summary>
-		protected void FireConfigurationChangedEvent()
+		/// <param name="logger">The newly created logger</param>
+		/// <remarks>
+		/// Raises the logger creation event.
+		/// </remarks>
+		protected virtual void OnLoggerCreationEvent(Logger logger) 
 		{
-			if (m_configurationChangedEvent != null)
+			LoggerCreationEventHandler handler = m_loggerCreatedEvent;
+			if (handler != null)
 			{
-				m_configurationChangedEvent(this, EventArgs.Empty);
+				handler(this, new LoggerCreationEventArgs(logger));
 			}
 		}
 
@@ -563,44 +792,40 @@ namespace log4net.Repository.Hierarchy
 		#region Private Instance Methods
 
 		/// <summary>
-		/// Sends a logger creation event to all registered listeners
-		/// </summary>
-		/// <param name="logger">The newly created logger</param>
-		private void FireLoggerCreationEvent(Logger logger) 
-		{
-			if (m_loggerCreatedEvent != null)
-			{
-				m_loggerCreatedEvent(this, new LoggerCreationEventArgs(logger));
-			}
-		}
-
-		/// <summary>
 		/// Updates all the parents of the specified logger
 		/// </summary>
+		/// <param name="log">The logger to update the parents for</param>
 		/// <remarks>
+		/// <para>
 		/// This method loops through all the <i>potential</i> parents of
-		/// 'log'. There 3 possible cases:
+		/// <paramref name="log"/>. There 3 possible cases:
+		/// </para>
 		/// <list type="number">
 		///		<item>
-		///			<term>No entry for the potential parent of 'log' exists</term>
-		///			<description>We create a ProvisionNode for this potential 
-		///			parent and insert 'log' in that provision node.</description>
+		///			<term>No entry for the potential parent of <paramref name="log"/> exists</term>
+		///			<description>
+		///			We create a ProvisionNode for this potential 
+		///			parent and insert <paramref name="log"/> in that provision node.
+		///			</description>
 		///		</item>
 		///		<item>
-		///			<term>There entry is of type Logger for the potential parent.</term>
-		///			<description>The entry is 'log's nearest existing parent. We 
-		///			update log's parent field with this entry. We also break from 
+		///			<term>The entry is of type Logger for the potential parent.</term>
+		///			<description>
+		///			The entry is <paramref name="log"/>'s nearest existing parent. We 
+		///			update <paramref name="log"/>'s parent field with this entry. We also break from 
 		///			he loop because updating our parent's parent is our parent's 
-		///			responsibility.</description>
+		///			responsibility.
+		///			</description>
 		///		</item>
 		///		<item>
-		///			<term>There entry is of type ProvisionNode for this potential parent.</term>
-		///			<description>We add 'log' to the list of children for this 
-		///			potential parent.</description>
+		///			<term>The entry is of type ProvisionNode for this potential parent.</term>
+		///			<description>
+		///			We add <paramref name="log"/> to the list of children for this 
+		///			potential parent.
+		///			</description>
 		///		</item>
 		/// </list>
 		/// </remarks>
-		/// <param name="log">The logger to update the parents for</param>
 		private void UpdateParents(Logger log) 
 		{
 			string name = log.Name;
@@ -620,49 +845,67 @@ namespace log4net.Repository.Hierarchy
 					ProvisionNode pn = new ProvisionNode(log);
 					m_ht[key] = pn;
 				} 
-				else if (node is Logger) 
-				{
-					parentFound = true;
-					log.Parent = (Logger)node;
-					break; // no need to update the ancestors of the closest ancestor
-				} 
-				else if (node is ProvisionNode) 
-				{
-					((ProvisionNode)node).Add(log);
-				} 
 				else
 				{
-					LogLog.Error("unexpected object type ["+node.GetType()+"] in ht.", new LogException());
+					Logger nodeLogger = node as Logger;
+					if (nodeLogger != null)
+					{
+						parentFound = true;
+						log.Parent = nodeLogger;
+						break; // no need to update the ancestors of the closest ancestor
+					}
+					else
+					{
+						ProvisionNode nodeProvisionNode = node as ProvisionNode;
+						if (nodeProvisionNode != null)
+						{
+							nodeProvisionNode.Add(log);
+						}
+						else
+						{
+							LogLog.Error(declaringType, "Unexpected object type ["+node.GetType()+"] in ht.", new LogException());
+						}
+					} 
+				}
+				if (i == 0) {
+				    // logger name starts with a dot
+				    // and we've hit the start
+				    break;
 				}
 			}
 
 			// If we could not find any existing parents, then link with root.
 			if (!parentFound) 
 			{
-				log.Parent = m_root;
+				log.Parent = this.Root;
 			}
 		}
 
 		/// <summary>
 		/// Replace a <see cref="ProvisionNode"/> with a <see cref="Logger"/> in the hierarchy.
 		/// </summary>
-		/// <remarks>
-		/// <para>We update the links for all the children that placed themselves
-		/// in the provision node 'pn'. The second argument 'log' is a
-		/// reference for the newly created Logger, parent of all the
-		/// children in 'pn'</para>
-		/// 
-		/// <para>We loop on all the children 'c' in 'pn':</para>
-		/// 
-		/// <para>If the child 'c' has been already linked to a child of
-		/// 'log' then there is no need to update 'c'.</para>
-		/// 
-		/// <para>Otherwise, we set log's parent field to c's parent and set
-		/// c's parent field to log.</para>
-		/// </remarks>
 		/// <param name="pn"></param>
 		/// <param name="log"></param>
-		private void UpdateChildren(ProvisionNode pn, Logger log) 
+		/// <remarks>
+		/// <para>
+		/// We update the links for all the children that placed themselves
+		/// in the provision node 'pn'. The second argument 'log' is a
+		/// reference for the newly created Logger, parent of all the
+		/// children in 'pn'.
+		/// </para>
+		/// <para>
+		/// We loop on all the children 'c' in 'pn'.
+		/// </para>
+		/// <para>
+		/// If the child 'c' has been already linked to a child of
+		/// 'log' then there is no need to update 'c'.
+		/// </para>
+		/// <para>
+		/// Otherwise, we set log's parent field to c's parent and set
+		/// c's parent field to log.
+		/// </para>
+		/// </remarks>
+		private static void UpdateChildren(ProvisionNode pn, Logger log) 
 		{
 			for(int i = 0; i < pn.Count; i++) 
 			{
@@ -676,7 +919,132 @@ namespace log4net.Repository.Hierarchy
 					childLogger.Parent = log;	  
 				}
 			}
-		}	
+		}
+
+		/// <summary>
+		/// Define or redefine a Level using the values in the <see cref="LevelEntry"/> argument
+		/// </summary>
+		/// <param name="levelEntry">the level values</param>
+		/// <remarks>
+		/// <para>
+		/// Define or redefine a Level using the values in the <see cref="LevelEntry"/> argument
+		/// </para>
+		/// <para>
+		/// Supports setting levels via the configuration file.
+		/// </para>
+		/// </remarks>
+		internal void AddLevel(LevelEntry levelEntry)
+		{
+			if (levelEntry == null) throw new ArgumentNullException("levelEntry");
+			if (levelEntry.Name == null) throw new ArgumentNullException("levelEntry.Name");
+
+			// Lookup replacement value
+			if (levelEntry.Value == -1)
+			{
+				Level previousLevel = LevelMap[levelEntry.Name];
+				if (previousLevel == null)
+				{
+					throw new InvalidOperationException("Cannot redefine level ["+levelEntry.Name+"] because it is not defined in the LevelMap. To define the level supply the level value.");
+				}
+
+				levelEntry.Value = previousLevel.Value;
+			}
+
+			LevelMap.Add(levelEntry.Name, levelEntry.Value, levelEntry.DisplayName);
+		}
+
+		/// <summary>
+		/// A class to hold the value, name and display name for a level
+		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// A class to hold the value, name and display name for a level
+		/// </para>
+		/// </remarks>
+		internal class LevelEntry
+		{
+			private int m_levelValue = -1;
+			private string m_levelName = null;
+			private string m_levelDisplayName = null;
+
+			/// <summary>
+			/// Value of the level
+			/// </summary>
+			/// <remarks>
+			/// <para>
+			/// If the value is not set (defaults to -1) the value will be looked
+			/// up for the current level with the same name.
+			/// </para>
+			/// </remarks>
+			public int Value
+			{
+				get { return m_levelValue; }
+				set { m_levelValue = value; }
+			}
+
+			/// <summary>
+			/// Name of the level
+			/// </summary>
+			/// <value>
+			/// The name of the level
+			/// </value>
+			/// <remarks>
+			/// <para>
+			/// The name of the level.
+			/// </para>
+			/// </remarks>
+			public string Name
+			{
+				get { return m_levelName; }
+				set { m_levelName = value; }
+			}
+
+			/// <summary>
+			/// Display name for the level
+			/// </summary>
+			/// <value>
+			/// The display name of the level
+			/// </value>
+			/// <remarks>
+			/// <para>
+			/// The display name of the level.
+			/// </para>
+			/// </remarks>
+			public string DisplayName
+			{
+				get { return m_levelDisplayName; }
+				set { m_levelDisplayName = value; }
+			}
+
+			/// <summary>
+			/// Override <c>Object.ToString</c> to return sensible debug info
+			/// </summary>
+			/// <returns>string info about this object</returns>
+			public override string ToString()
+			{
+				return "LevelEntry(Value="+m_levelValue+", Name="+m_levelName+", DisplayName="+m_levelDisplayName+")";
+			}
+		}
+
+		/// <summary>
+		/// Set a Property using the values in the <see cref="LevelEntry"/> argument
+		/// </summary>
+		/// <param name="propertyEntry">the property value</param>
+		/// <remarks>
+		/// <para>
+		/// Set a Property using the values in the <see cref="LevelEntry"/> argument.
+		/// </para>
+		/// <para>
+		/// Supports setting property values via the configuration file.
+		/// </para>
+		/// </remarks>
+		internal void AddProperty(PropertyEntry propertyEntry)
+		{
+			if (propertyEntry == null) throw new ArgumentNullException("propertyEntry");
+			if (propertyEntry.Key == null) throw new ArgumentNullException("propertyEntry.Key");
+
+			Properties[propertyEntry.Key] = propertyEntry.Value;
+		}
 
 		#endregion Private Instance Methods
 
@@ -688,9 +1056,22 @@ namespace log4net.Repository.Hierarchy
 		private Logger m_root;
   
 		private bool m_emittedNoAppenderWarning = false;
-		private event LoggerCreationEventHandler m_loggerCreatedEvent;
-		private event HierarchyConfigurationChangedEventHandler m_configurationChangedEvent;
+
+	    private event LoggerCreationEventHandler m_loggerCreatedEvent;
 
 		#endregion Private Instance Fields
+
+	    #region Private Static Fields
+
+	    /// <summary>
+	    /// The fully qualified type of the Hierarchy class.
+	    /// </summary>
+	    /// <remarks>
+	    /// Used by the internal logger to record the Type of the
+	    /// log message.
+	    /// </remarks>
+	    private readonly static Type declaringType = typeof(Hierarchy);
+
+	    #endregion Private Static Fields
 	}
 }

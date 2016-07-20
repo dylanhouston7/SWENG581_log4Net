@@ -1,20 +1,31 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
+
+// .NET Compact Framework 1.0 has no support for reading assembly attributes
+#if !NETCF
 
 using System;
 using System.Globalization;
 using System.Reflection;
 
-using log4net.spi;
-using log4net.helpers;
+using log4net.Core;
+using log4net.Util;
 using log4net.Plugin;
 
 namespace log4net.Config
@@ -23,6 +34,15 @@ namespace log4net.Config
 	/// Assembly level attribute that specifies a plugin to attach to 
 	/// the repository.
 	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// Specifies the type of a plugin to create and attach to the
+	/// assembly's repository. The plugin type must implement the
+	/// <see cref="IPlugin"/> interface.
+	/// </para>
+	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	[AttributeUsage(AttributeTargets.Assembly,AllowMultiple=true)]
 	[Serializable]
 	public sealed class PluginAttribute : Attribute, IPluginFactory
@@ -33,8 +53,31 @@ namespace log4net.Config
 		/// Initializes a new instance of the <see cref="PluginAttribute" /> class
 		/// with the specified type.
 		/// </summary>
+		/// <param name="typeName">The type name of plugin to create.</param>
+		/// <remarks>
+		/// <para>
+		/// Create the attribute with the plugin type specified.
+		/// </para>
+		/// <para>
+		/// Where possible use the constructor that takes a <see cref="System.Type"/>.
+		/// </para>
+		/// </remarks>
+		public PluginAttribute(string typeName)
+		{
+			m_typeName = typeName;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="PluginAttribute" /> class
+		/// with the specified type.
+		/// </summary>
 		/// <param name="type">The type of plugin to create.</param>
-		public PluginAttribute(string type)
+		/// <remarks>
+		/// <para>
+		/// Create the attribute with the plugin type specified.
+		/// </para>
+		/// </remarks>
+		public PluginAttribute(Type type)
 		{
 			m_type = type;
 		}
@@ -44,15 +87,40 @@ namespace log4net.Config
 		#region Public Instance Properties
 
 		/// <summary>
+		/// Gets or sets the type for the plugin.
+		/// </summary>
+		/// <value>
+		/// The type for the plugin.
+		/// </value>
+		/// <remarks>
+		/// <para>
+		/// The type for the plugin.
+		/// </para>
+		/// </remarks>
+		public Type Type
+		{
+			get { return m_type; }
+			set { m_type = value ; }
+		}
+
+		/// <summary>
 		/// Gets or sets the type name for the plugin.
 		/// </summary>
 		/// <value>
 		/// The type name for the plugin.
 		/// </value>
-		public string Type
+		/// <remarks>
+		/// <para>
+		/// The type name for the plugin.
+		/// </para>
+		/// <para>
+		/// Where possible use the <see cref="Type"/> property instead.
+		/// </para>
+		/// </remarks>
+		public string TypeName
 		{
-			get { return m_type; }
-			set { m_type = value ; }
+			get { return m_typeName; }
+			set { m_typeName = value ; }
 		}
 
 		#endregion Public Instance Properties
@@ -63,23 +131,29 @@ namespace log4net.Config
 		/// Creates the plugin object defined by this attribute.
 		/// </summary>
 		/// <remarks>
+		/// <para>
 		/// Creates the instance of the <see cref="IPlugin"/> object as 
 		/// specified by this attribute.
+		/// </para>
 		/// </remarks>
 		/// <returns>The plugin object.</returns>
 		public IPlugin CreatePlugin()
 		{
-			// Get the plugin object type
-			System.Type pluginType = SystemInfo.GetTypeFromString(this.Type, true, true);
+			Type pluginType = m_type;
+			if (m_type == null)
+			{
+				// Get the plugin object type from the string type name
+				pluginType = SystemInfo.GetTypeFromString(m_typeName, true, true);
+			}
 
 			// Check that the type is a plugin
 			if (!(typeof(IPlugin).IsAssignableFrom(pluginType)))
 			{
-				throw new LogException("Plugin type [" + this.Type + "] does not implement log4net.IPlugin interface");
+				throw new LogException("Plugin type [" + pluginType.FullName + "] does not implement the log4net.IPlugin interface");
 			}
 
 			// Create an instance of the plugin using the default constructor
-			IPlugin plugin = (IPlugin) pluginType.GetConstructor(SystemInfo.EmptyTypes).Invoke(BindingFlags.Public | BindingFlags.Instance, null, new object[0], CultureInfo.InvariantCulture);
+			IPlugin plugin = (IPlugin)Activator.CreateInstance(pluginType);
 
 			return plugin;
 		}
@@ -92,21 +166,30 @@ namespace log4net.Config
 		/// Returns a representation of the properties of this object.
 		/// </summary>
 		/// <remarks>
-		/// Overrides base class <see cref="Object.ToString()" /> method to 
+		/// <para>
+		/// Overrides base class <see cref="M:Object.ToString()" /> method to 
 		/// return a representation of the properties of this object.
+		/// </para>
 		/// </remarks>
 		/// <returns>A representation of the properties of this object</returns>
 		override public string ToString()
 		{
-			return "PluginAttribute[Type=" + this.Type + "]";
+			if (m_type != null)
+			{
+				return "PluginAttribute[Type=" + m_type.FullName + "]";
+			}
+			return "PluginAttribute[Type=" + m_typeName + "]";
 		}
 
 		#endregion Override implementation of Object
 
 		#region Private Instance Fields
 
-		private string m_type = null;
+		private string m_typeName = null;
+		private Type m_type = null;
 
 		#endregion Private Instance Fields
 	}
 }
+
+#endif // !NETCF

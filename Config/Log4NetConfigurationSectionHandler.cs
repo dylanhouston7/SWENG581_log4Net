@@ -1,13 +1,24 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
+
+// .NET Compact Framework 1.0 has no support for application .config files
+#if !NETCF
 
 using System.Configuration;
 using System.Xml;
@@ -24,18 +35,19 @@ namespace log4net.Config
 	/// </remarks>
 	/// <example>
 	/// Example of registering the log4net section handler :
-	/// <code>
-	/// &lt;?xml version="1.0" encoding="utf-8" ?&gt;
-	/// &lt;configuration&gt;
-	///		&lt;configSections&gt;
-	///			&lt;section name="log4net" type="log4net.Config.Log4NetConfigurationSectionHandler, log4net" /&gt;
-	///		&lt;/configSections&gt;
-	///		&lt;log4net&gt;
+	/// <code lang="XML" escaped="true">
+	/// <configuration>
+	///		<configSections>
+	///			<section name="log4net" type="log4net.Config.Log4NetConfigurationSectionHandler, log4net" />
+	///		</configSections>
+	///		<log4net>
 	///			log4net configuration XML goes here
-	///		&lt;/log4net&gt;
-	/// &lt;/configuration&gt;
+	///		</log4net>
+	/// </configuration>
 	/// </code>
 	/// </example>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	public class Log4NetConfigurationSectionHandler : IConfigurationSectionHandler
 	{
 		#region Public Instance Constructors
@@ -43,6 +55,11 @@ namespace log4net.Config
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Log4NetConfigurationSectionHandler"/> class.
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// Default constructor.
+		/// </para>
+		/// </remarks>
 		public Log4NetConfigurationSectionHandler()
 		{
 		}
@@ -58,6 +75,11 @@ namespace log4net.Config
 		/// <param name="configContext">The configuration context when called from the ASP.NET configuration system. Otherwise, this parameter is reserved and is a null reference.</param>
 		/// <param name="section">The <see cref="XmlNode" /> for the log4net section.</param>
 		/// <returns>The <see cref="XmlNode" /> for the log4net section.</returns>
+		/// <remarks>
+		/// <para>
+		/// Returns the <see cref="XmlNode"/> containing the configuration data,
+		/// </para>
+		/// </remarks>
 		public object Create(object parent, object configContext, XmlNode section)
 		{
 			return section;
@@ -66,3 +88,5 @@ namespace log4net.Config
 		#endregion Implementation of IConfigurationSectionHandler
 	}
 }
+
+#endif // !NETCF

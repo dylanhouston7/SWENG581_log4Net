@@ -1,44 +1,81 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
+
+// .NET Compact Framework 1.0 has no support for System.Runtime.Remoting
+#if !NETCF
 
 using System;
 using System.Runtime.Remoting;
 
-using log4net.helpers;
+using log4net.Util;
 using log4net.Repository;
-using log4net.spi;
+using log4net.Core;
 using IRemoteLoggingSink = log4net.Appender.RemotingAppender.IRemoteLoggingSink;
 
 namespace log4net.Plugin
 {
 	/// <summary>
-	/// Publishes an instance of <see cref="log4net.Appender.RemotingAppender.IRemoteLoggingSink"/> 
-	/// on the specified URI.
+	/// Plugin that listens for events from the <see cref="log4net.Appender.RemotingAppender"/>
 	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// This plugin publishes an instance of <see cref="IRemoteLoggingSink"/> 
+	/// on a specified <see cref="SinkUri"/>. This listens for logging events delivered from
+	/// a remote <see cref="log4net.Appender.RemotingAppender"/>.
+	/// </para>
+	/// <para>
+	/// When an event is received it is relogged within the attached repository
+	/// as if it had been raised locally.
+	/// </para>
+	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	public class RemoteLoggingServerPlugin : PluginSkeleton
 	{
 		#region Public Instance Constructors
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="RemoteLoggingServerPlugin" /> class.
+		/// Default constructor
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// Initializes a new instance of the <see cref="RemoteLoggingServerPlugin" /> class.
+		/// </para>
+		/// <para>
+		/// The <see cref="SinkUri"/> property must be set.
+		/// </para>
+		/// </remarks>
 		public RemoteLoggingServerPlugin() : base("RemoteLoggingServerPlugin:Unset URI")
 		{
 		}
 
 		/// <summary>
+		/// Construct with sink Uri.
+		/// </summary>
+		/// <param name="sinkUri">The name to publish the sink under in the remoting infrastructure. 
+		/// See <see cref="SinkUri"/> for more details.</param>
+		/// <remarks>
+		/// <para>
 		/// Initializes a new instance of the <see cref="RemoteLoggingServerPlugin" /> class
 		/// with specified name.
-		/// </summary>
-		/// <param name="sinkUri">The name to publish the sink under in the remoting infrastructure.</param>
+		/// </para>
+		/// </remarks>
 		public RemoteLoggingServerPlugin(string sinkUri) : base("RemoteLoggingServerPlugin:"+sinkUri)
 		{
 			m_sinkUri = sinkUri;
@@ -54,6 +91,12 @@ namespace log4net.Plugin
 		/// <value>
 		/// The URI of this sink.
 		/// </value>
+		/// <remarks>
+		/// <para>
+		/// This is the name under which the object is marshaled.
+		/// <see cref="M:RemotingServices.Marshal(MarshalByRefObject,String,Type)"/>
+		/// </para>
+		/// </remarks>
 		public virtual string SinkUri 
 		{ 
 			get { return m_sinkUri; }
@@ -76,6 +119,9 @@ namespace log4net.Plugin
 		/// This method is called when the plugin is attached to the repository.
 		/// </para>
 		/// </remarks>
+#if NET_4_0 || MONO_4_0
+		[System.Security.SecuritySafeCritical]
+#endif
 		override public void Attach(ILoggerRepository repository)
 		{
 			base.Attach(repository);
@@ -85,18 +131,27 @@ namespace log4net.Plugin
 
 			try
 			{
-				RemotingServices.Marshal(m_sink, m_sinkUri, typeof(log4net.Appender.RemotingAppender.IRemoteLoggingSink));		
+				RemotingServices.Marshal(m_sink, m_sinkUri, typeof(IRemoteLoggingSink));		
 			}
 			catch(Exception ex)
 			{
-				LogLog.Error("RemoteLoggingServerPlugin: Failed to Marshal remoting sink", ex);
+				LogLog.Error(declaringType, "Failed to Marshal remoting sink", ex);
 			}
 		}
 
 		/// <summary>
 		/// Is called when the plugin is to shutdown.
 		/// </summary>
-		override public void Shutdown()
+		/// <remarks>
+		/// <para>
+		/// When the plugin is shutdown the remote logging
+		/// sink is disconnected.
+		/// </para>
+		/// </remarks>
+#if NET_4_0 || MONO_4_0
+        [System.Security.SecuritySafeCritical]
+#endif
+        override public void Shutdown()
 		{
 			// Stops the sink from receiving messages
 			RemotingServices.Disconnect(m_sink);
@@ -114,43 +169,48 @@ namespace log4net.Plugin
 
 		#endregion Private Instance Fields
 
+	    #region Private Static Fields
+
+	    /// <summary>
+	    /// The fully qualified type of the RemoteLoggingServerPlugin class.
+	    /// </summary>
+	    /// <remarks>
+	    /// Used by the internal logger to record the Type of the
+	    /// log message.
+	    /// </remarks>
+	    private readonly static Type declaringType = typeof(RemoteLoggingServerPlugin);
+
+	    #endregion Private Static Fields
+
 		/// <summary>
 		/// Delivers <see cref="LoggingEvent"/> objects to a remote sink.
 		/// </summary>
-		public class RemoteLoggingSinkImpl : MarshalByRefObject, log4net.Appender.RemotingAppender.IRemoteLoggingSink
+		/// <remarks>
+		/// <para>
+		/// Internal class used to listen for logging events
+		/// and deliver them to the local repository.
+		/// </para>
+		/// </remarks>
+		private class RemoteLoggingSinkImpl : MarshalByRefObject, IRemoteLoggingSink
 		{
-
 			#region Public Instance Constructors
 
 			/// <summary>
-			/// Initializes a new instance of the <see cref="RemoteLoggingSinkImpl"/> for the
-			/// specified <see cref="ILoggerRepository"/>.
+			/// Constructor
 			/// </summary>
 			/// <param name="repository">The repository to log to.</param>
+			/// <remarks>
+			/// <para>
+			/// Initializes a new instance of the <see cref="RemoteLoggingSinkImpl"/> for the
+			/// specified <see cref="ILoggerRepository"/>.
+			/// </para>
+			/// </remarks>
 			public RemoteLoggingSinkImpl(ILoggerRepository repository)
 			{
 				m_repository = repository;
 			}
 
 			#endregion Public Instance Constructors
-
-			#region Protected Instance Properties
-
-			/// <summary>
-			/// Gets or sets the underlying <see cref="ILoggerRepository" /> that 
-			/// events should be logged to.
-			/// </summary>
-			/// <value>
-			/// The underlying <see cref="ILoggerRepository" /> that events should
-			/// be logged to.
-			/// </value>
-			protected ILoggerRepository LoggerRepository 
-			{
-				get { return this.m_repository; }
-				set { this.m_repository = value; }
-			}
-
-			#endregion Protected Instance Properties
 
 			#region Implementation of IRemoteLoggingSink
 
@@ -159,7 +219,9 @@ namespace log4net.Plugin
 			/// </summary>
 			/// <param name="events">The events to log.</param>
 			/// <remarks>
-			/// The events passed are logged to the <see cref="LoggerRepository"/>
+			/// <para>
+			/// The events passed are logged to the <see cref="ILoggerRepository"/>
+			/// </para>
 			/// </remarks>
 			public void LogEvents(LoggingEvent[] events)
 			{
@@ -183,11 +245,18 @@ namespace log4net.Plugin
 			/// Obtains a lifetime service object to control the lifetime 
 			/// policy for this instance.
 			/// </summary>
-			/// <returns>
-			/// <c>null</c> to indicate that this instance should live
-			/// forever.
-			/// </returns>
-			public override object InitializeLifetimeService()
+			/// <returns><c>null</c> to indicate that this instance should live forever.</returns>
+			/// <remarks>
+			/// <para>
+			/// Obtains a lifetime service object to control the lifetime 
+			/// policy for this instance. This object should live forever
+			/// therefore this implementation returns <c>null</c>.
+			/// </para>
+			/// </remarks>
+#if NET_4_0 || MONO_4_0
+            [System.Security.SecurityCritical]
+#endif
+            public override object InitializeLifetimeService()
 			{
 				return null;
 			}
@@ -200,9 +269,11 @@ namespace log4net.Plugin
 			/// The underlying <see cref="ILoggerRepository" /> that events should
 			/// be logged to.
 			/// </summary>
-			private ILoggerRepository m_repository;
+			private readonly ILoggerRepository m_repository;
 
 			#endregion Private Instance Fields
 		}
 	}
 }
+
+#endif // !NETCF

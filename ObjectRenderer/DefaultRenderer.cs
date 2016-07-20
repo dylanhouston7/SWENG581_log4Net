@@ -1,83 +1,55 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
 using System.Text;
+using System.IO;
+using System.Collections;
 
-using log4net.helpers;
+using log4net.Util;
 
 namespace log4net.ObjectRenderer
 {
 	/// <summary>
-	/// The default Renderer renders objects by calling their <see cref="Object.ToString"/> method.
+	/// The default object Renderer.
 	/// </summary>
 	/// <remarks>
-	/// <para>The default renderer supports rendering objects to strings as follows:</para>
-	/// 
-	/// <list type="table">
-	///		<listheader>
-	///			<term>Value</term>
-	///			<description>Rendered String</description>
-	///		</listheader>
-	///		<item>
-	///			<term><c>null</c></term>
-	///			<description><para>"(null)"</para></description>
-	///		</item>
-	///		<item>
-	///			<term><see cref="Array"/></term>
-	///			<description>
-	///			<para>For a one dimensional array this is the
-	///			array type name, an open brace, followed by a comma
-	///			separated list of the elements (using the appropriate
-	///			renderer), followed by a close brace. For example:
-	///			<c>int[] {1, 2, 3}</c>.</para>
-	///			<para>If the array is not one dimensional the 
-	///			<c>Array.ToString()</c> is returned.</para>
-	///			</description>
-	///		</item>
-	///		<item>
-	///			<term><see cref="Exception"/></term>
-	///			<description>
-	///			<para>Renders the exception type, message
-	///			and stack trace. Any nested exception is also rendered.</para>
-	///			</description>
-	///		</item>
-	///		<item>
-	///			<term>other</term>
-	///			<description>
-	///			<para><c>Object.ToString()</c></para>
-	///			</description>
-	///		</item>
-	/// </list>
-	/// 
-	/// <para>The <see cref="DefaultRenderer"/> serves as a good base class 
-	/// for renderers that need to provide special handling of exception
-	/// types. The <see cref="RenderException"/> method is used to render
-	/// the exception and its nested exceptions, however the <see cref="RenderExceptionMessage"/>
-	/// method is called just to render the exceptions message. This method
-	/// can be overridden is a subclass to provide additional information
-	/// for some exception types. See <see cref="RenderException"/> for
-	/// more information.</para>
+	/// <para>
+	/// The default renderer supports rendering objects and collections to strings.
+	/// </para>
+	/// <para>
+	/// See the <see cref="RenderObject"/> method for details of the output.
+	/// </para>
 	/// </remarks>
-	public class DefaultRenderer : IObjectRenderer
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
+	public sealed class DefaultRenderer : IObjectRenderer
 	{
-		private static readonly string NewLine = SystemInfo.NewLine;
-
 		#region Constructors
 
 		/// <summary>
 		/// Default constructor
 		/// </summary>
 		/// <remarks>
+		/// <para>
 		/// Default constructor
+		/// </para>
 		/// </remarks>
 		public DefaultRenderer()
 		{
@@ -92,19 +64,21 @@ namespace log4net.ObjectRenderer
 		/// </summary>
 		/// <param name="rendererMap">The map used to lookup renderers</param>
 		/// <param name="obj">The object to render</param>
-		/// <returns>the object rendered as a string</returns>
+		/// <param name="writer">The writer to render to</param>
 		/// <remarks>
-		/// <para>Render the object <paramref name="obj"/> to a 
-		/// string.</para>
-		/// 
-		/// <para>The <paramref name="rendererMap"/> parameter is
+		/// <para>
+		/// Render the object <paramref name="obj"/> to a string.
+		/// </para>
+		/// <para>
+		/// The <paramref name="rendererMap"/> parameter is
 		/// provided to lookup and render other objects. This is
 		/// very useful where <paramref name="obj"/> contains
-		/// nested objects of unknown type. The <see cref="RendererMap.FindAndRender"/>
-		/// method can be used to render these objects.</para>
-		/// 
-		/// <para>The default renderer supports rendering objects to strings as follows:</para>
-		/// 
+		/// nested objects of unknown type. The <see cref="M:RendererMap.FindAndRender(object)"/>
+		/// method can be used to render these objects.
+		/// </para>
+		/// <para>
+		/// The default renderer supports rendering objects to strings as follows:
+		/// </para>
 		/// <list type="table">
 		///		<listheader>
 		///			<term>Value</term>
@@ -119,32 +93,50 @@ namespace log4net.ObjectRenderer
 		///		<item>
 		///			<term><see cref="Array"/></term>
 		///			<description>
-		///			<para>For a one dimensional array this is the
+		///			<para>
+		///			For a one dimensional array this is the
 		///			array type name, an open brace, followed by a comma
 		///			separated list of the elements (using the appropriate
-		///			renderer), followed by a close brace. For example:
-		///			<c>int[] {1, 2, 3}</c>.</para>
-		///			<para>If the array is not one dimensional the 
-		///			<c>Array.ToString()</c> is returned.</para>
-		///			
-		///			<para>The <see cref="RenderArray"/> method is called
-		///			to do the actual array rendering. This method can be
-		///			overridden in a subclass to provide different array
-		///			rendering.</para>
+		///			renderer), followed by a close brace. 
+		///			</para>
+		///			<para>
+		///			For example: <c>int[] {1, 2, 3}</c>.
+		///			</para>
+		///			<para>
+		///			If the array is not one dimensional the 
+		///			<c>Array.ToString()</c> is returned.
+		///			</para>
 		///			</description>
 		///		</item>
 		///		<item>
-		///			<term><see cref="Exception"/></term>
+		///			<term><see cref="IEnumerable"/>, <see cref="ICollection"/> &amp; <see cref="IEnumerator"/></term>
 		///			<description>
-		///			<para>Renders the exception type, message
-		///			and stack trace. Any nested exception is also rendered.</para>
-		///			
-		///			<para>The <see cref="RenderException"/> method is called
-		///			to do the actual exception rendering. This method can be
-		///			overridden in a subclass to provide different exception
-		///			rendering.</para>
+		///			<para>
+		///			Rendered as an open brace, followed by a comma
+		///			separated list of the elements (using the appropriate
+		///			renderer), followed by a close brace.
+		///			</para>
+		///			<para>
+		///			For example: <c>{a, b, c}</c>.
+		///			</para>
+		///			<para>
+		///			All collection classes that implement <see cref="ICollection"/> its subclasses, 
+		///			or generic equivalents all implement the <see cref="IEnumerable"/> interface.
+		///			</para>
 		///			</description>
-		///		</item>
+		///		</item>		
+		///		<item>
+		///			<term><see cref="DictionaryEntry"/></term>
+		///			<description>
+		///			<para>
+		///			Rendered as the key, an equals sign ('='), and the value (using the appropriate
+		///			renderer). 
+		///			</para>
+		///			<para>
+		///			For example: <c>key=value</c>.
+		///			</para>
+		///			</description>
+		///		</item>		
 		///		<item>
 		///			<term>other</term>
 		///			<description>
@@ -153,7 +145,7 @@ namespace log4net.ObjectRenderer
 		///		</item>
 		/// </list>
 		/// </remarks>
-		virtual public string DoRender(RendererMap rendererMap, object obj) 
+		public void RenderObject(RendererMap rendererMap, object obj, TextWriter writer)
 		{
 			if (rendererMap == null)
 			{
@@ -162,21 +154,61 @@ namespace log4net.ObjectRenderer
 
 			if (obj == null)
 			{
-				return "(null)";
+				writer.Write(SystemInfo.NullText);
+				return;
+			}
+			
+			Array objArray = obj as Array;
+			if (objArray != null)
+			{
+				RenderArray(rendererMap, objArray, writer);
+				return;
 			}
 
-			if (obj is Array)
+			// Test if we are dealing with some form of collection object
+			IEnumerable objEnumerable = obj as IEnumerable;
+			if (objEnumerable != null)
 			{
-				return RenderArray(rendererMap, (Array)obj);
+				// Get a collection interface if we can as its .Count property may be more
+				// performant than getting the IEnumerator object and trying to advance it.
+				ICollection objCollection = obj as ICollection;
+				if (objCollection != null && objCollection.Count == 0)
+				{
+					writer.Write("{}");
+					return;
+				}
+				
+				// This is a special check to allow us to get the enumerator from the IDictionary
+				// interface as this guarantees us DictionaryEntry objects. Note that in .NET 2.0
+				// the generic IDictionary<> interface enumerates KeyValuePair objects rather than
+				// DictionaryEntry ones. However the implementation of the plain IDictionary 
+				// interface on the generic Dictionary<> still returns DictionaryEntry objects.
+				IDictionary objDictionary = obj as IDictionary;
+				if (objDictionary != null)
+				{
+					RenderEnumerator(rendererMap, objDictionary.GetEnumerator(), writer);
+					return;
+				}
+
+				RenderEnumerator(rendererMap, objEnumerable.GetEnumerator(), writer);
+				return;
 			}
-			else if (obj is Exception)
+
+			IEnumerator objEnumerator = obj as IEnumerator;
+			if (objEnumerator != null)
 			{
-				return RenderException(rendererMap, (Exception)obj);
+				RenderEnumerator(rendererMap, objEnumerator, writer);
+				return;
 			}
-			else
+			
+			if (obj is DictionaryEntry)
 			{
-				return obj.ToString();
+				RenderDictionaryEntry(rendererMap, (DictionaryEntry)obj, writer);
+				return;
 			}
+
+			string str = obj.ToString();
+			writer.Write( (str==null) ? SystemInfo.NullText : str );
 		}
 
 		#endregion
@@ -186,105 +218,93 @@ namespace log4net.ObjectRenderer
 		/// </summary>
 		/// <param name="rendererMap">The map used to lookup renderers</param>
 		/// <param name="array">the array to render</param>
-		/// <returns>the string representation of the array</returns>
+		/// <param name="writer">The writer to render to</param>
 		/// <remarks>
-		/// <para>For a one dimensional array this is the
+		/// <para>
+		/// For a one dimensional array this is the
 		///	array type name, an open brace, followed by a comma
 		///	separated list of the elements (using the appropriate
 		///	renderer), followed by a close brace. For example:
-		///	<c>int[] {1, 2, 3}</c>.</para>
-		///	<para>If the array is not one dimensional the 
-		///	<c>Array.ToString()</c> is returned.</para>
+		///	<c>int[] {1, 2, 3}</c>.
+		///	</para>
+		///	<para>
+		///	If the array is not one dimensional the 
+		///	<c>Array.ToString()</c> is returned.
+		///	</para>
 		/// </remarks>
-		virtual protected string RenderArray(RendererMap rendererMap, Array array)
+		private void RenderArray(RendererMap rendererMap, Array array, TextWriter writer)
 		{
 			if (array.Rank != 1)
 			{
-				return array.ToString();
+				writer.Write(array.ToString());
 			}
 			else
 			{
-				StringBuilder buffer = new StringBuilder(array.GetType().Name + " {");
+				writer.Write(array.GetType().Name + " {");
 				int len = array.Length;
 
 				if (len > 0)
 				{
-					buffer.Append(rendererMap.FindAndRender(array.GetValue(0)));
+					rendererMap.FindAndRender(array.GetValue(0), writer);
 					for(int i=1; i<len; i++)
 					{
-						buffer.Append(", ").Append(rendererMap.FindAndRender(array.GetValue(i)));
+						writer.Write(", ");
+						rendererMap.FindAndRender(array.GetValue(i), writer);
 					}
 				}
-				return buffer.Append("}").ToString();
+				writer.Write("}");
 			}
 		}
 
 		/// <summary>
-		/// Render the exception into a string
+		/// Render the enumerator argument into a string
 		/// </summary>
 		/// <param name="rendererMap">The map used to lookup renderers</param>
-		/// <param name="ex">the exception to render</param>
-		/// <returns>the string representation of the exception</returns>
+		/// <param name="enumerator">the enumerator to render</param>
+		/// <param name="writer">The writer to render to</param>
 		/// <remarks>
-		/// <para>Renders the exception type, message, and stack trace. Any nested
-		/// exceptions are also rendered.</para>
-		/// 
-		/// <para>The <see cref="RenderExceptionMessage(RendererMap,Exception)"/>
-		/// method is called to render the Exception's message into a string. This method
-		/// can be overridden to change the behaviour when rendering
-		/// exceptions. To change or extend only the message that is
-		/// displayed override the <see cref="RenderExceptionMessage(RendererMap,Exception)"/>
-		/// method instead.</para>
+		/// <para>
+		/// Rendered as an open brace, followed by a comma
+		///	separated list of the elements (using the appropriate
+		///	renderer), followed by a close brace. For example:
+		///	<c>{a, b, c}</c>.
+		///	</para>
 		/// </remarks>
-		virtual protected string RenderException(RendererMap rendererMap, Exception ex)
+		private void RenderEnumerator(RendererMap rendererMap, IEnumerator enumerator, TextWriter writer)
 		{
-			System.Text.StringBuilder sb = new System.Text.StringBuilder();
-			sb.Append("Exception: ")
-				.Append(ex.GetType().FullName)
-				.Append(NewLine)
-				.Append("Message: ")
-				.Append(RenderExceptionMessage(rendererMap, ex))
-				.Append(NewLine);
+			writer.Write("{");
 
-#if !NETCF
-			if (ex.Source != null && ex.Source.Length > 0)
+			if (enumerator != null && enumerator.MoveNext())
 			{
-				sb.Append("Source: ").Append(ex.Source).Append(NewLine);
+				rendererMap.FindAndRender(enumerator.Current, writer);
+
+				while (enumerator.MoveNext())
+				{
+					writer.Write(", ");
+					rendererMap.FindAndRender(enumerator.Current, writer);
+				}
 			}
-			if (ex.StackTrace != null && ex.StackTrace.Length > 0)
-			{
-				sb.Append(ex.StackTrace).Append(NewLine);
-			}
-#endif
-			if (ex.InnerException != null)
-			{
-				sb.Append(NewLine)
-					.Append("Nested Exception")
-					.Append(NewLine)
-					.Append(NewLine)
-					.Append(RenderException(rendererMap, ex.InnerException))
-					.Append(NewLine);
-			}
-			return sb.ToString();
+
+			writer.Write("}");
 		}
 
 		/// <summary>
-		/// Render the exception message into a string
+		/// Render the DictionaryEntry argument into a string
 		/// </summary>
 		/// <param name="rendererMap">The map used to lookup renderers</param>
-		/// <param name="ex">the exception to get the message from and render</param>
-		/// <returns>the string representation of the exception message</returns>
+		/// <param name="entry">the DictionaryEntry to render</param>
+		/// <param name="writer">The writer to render to</param>
 		/// <remarks>
-		/// <para>This method is called to render the exception's message into
-		/// a string. This method should be overridden to extend the information
-		/// that is rendered for a specific exception.</para>
-		/// 
-		/// <para>See <see cref="RenderException"/> for more information.</para>
+		/// <para>
+		/// Render the key, an equals sign ('='), and the value (using the appropriate
+		///	renderer). For example: <c>key=value</c>.
+		///	</para>
 		/// </remarks>
-		virtual protected string RenderExceptionMessage(RendererMap rendererMap, Exception ex)
+		private void RenderDictionaryEntry(RendererMap rendererMap, DictionaryEntry entry, TextWriter writer)
 		{
-			return ex.Message;
-		}
-
+			rendererMap.FindAndRender(entry.Key, writer);
+			writer.Write("=");
+			rendererMap.FindAndRender(entry.Value, writer);
+		}	
 	}
 }

@@ -1,17 +1,25 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using log4net.Filter;
 using log4net.Layout;
-using log4net.spi;
+using log4net.Core;
 
 namespace log4net.Appender
 {
@@ -20,15 +28,17 @@ namespace log4net.Appender
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// Implementers should consider extending the <see cref="AppenderSkeleton"/>
+	/// Implementors should consider extending the <see cref="AppenderSkeleton"/>
 	/// class which provides a default implementation of this interface.
 	/// </para>
 	/// <para>
 	/// Appenders can also implement the <see cref="IOptionHandler"/> interface. Therefore
-	/// they would require that the <see cref="IOptionHandler.ActivateOptions()"/> method
+	/// they would require that the <see cref="M:IOptionHandler.ActivateOptions()"/> method
 	/// be called after the appenders properties have been configured.
 	/// </para>
 	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	public interface IAppender
 	{
 		/// <summary>

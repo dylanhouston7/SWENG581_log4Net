@@ -1,12 +1,20 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
@@ -16,8 +24,8 @@ using System.Net.Sockets;
 using System.Text;
 
 using log4net.Layout;
-using log4net.spi;
-using log4net.helpers;
+using log4net.Core;
+using log4net.Util;
 
 namespace log4net.Appender 
 {
@@ -28,11 +36,6 @@ namespace log4net.Appender
 	/// <remarks>
 	/// <para>
 	/// UDP guarantees neither that messages arrive, nor that they arrive in the correct order.
-	/// </para>
-	/// <para>
-	/// This appender sets the <c>hostname</c> property in the 
-	/// <see cref="LoggingEvent.Properties"/> collection to the name of 
-	/// the machine on which the event is logged.
 	/// </para>
 	/// <para>
 	/// To view the logging results, a custom application can be developed that listens for logging 
@@ -54,7 +57,8 @@ namespace log4net.Appender
 	/// byte[] buffer;
 	/// string loggingEvent;
 	/// 
-	/// try {
+	/// try 
+	/// {
 	///     udpClient = new UdpClient(8080);
 	///     
 	///     while(true) 
@@ -92,16 +96,16 @@ namespace log4net.Appender
 	/// An example configuration section to log information using this appender to the 
 	/// IP 224.0.0.1 on port 8080:
 	/// </para>
-	/// <code>
-	/// &lt;appender name="UdpAppender" type="log4net.Appender.UdpAppender, log4net"&gt;
-	///     &lt;param name="RemoteAddress" value="224.0.0.1" /&gt;
-	///     &lt;param name="RemotePort" value="8080" /&gt;
-	///     &lt;layout type="log4net.Layout.PatternLayout"&gt;
-	///         &lt;param name="ConversionPattern" value="%-5p %c [%x] - %m%n" /&gt;
-	///     &lt;/layout&gt;
-	/// &lt;/appender&gt;
+	/// <code lang="XML" escaped="true">
+	/// <appender name="UdpAppender" type="log4net.Appender.UdpAppender">
+	///     <remoteAddress value="224.0.0.1" />
+	///     <remotePort value="8080" />
+	///     <layout type="log4net.Layout.PatternLayout" value="%-5level %logger [%ndc] - %message%newline" />
+	/// </appender>
 	/// </code>
 	/// </example>
+	/// <author>Gert Driesen</author>
+	/// <author>Nicko Cadell</author>
 	public class UdpAppender : AppenderSkeleton
 	{
 		#region Public Instance Constructors
@@ -142,7 +146,7 @@ namespace log4net.Appender
 		/// them from normal host addresses, allowing nodes to easily detect if a message is of interest.
 		/// </para>
 		/// <para>
-		/// Static multicast addresses that are needed globally are assigned by IANA.  A few examples are listed in the table below :
+		/// Static multicast addresses that are needed globally are assigned by IANA.  A few examples are listed in the table below:
 		/// </para>
 		/// <para>
 		/// <list type="table">
@@ -214,7 +218,7 @@ namespace log4net.Appender
 			{
 				if (value < IPEndPoint.MinPort || value > IPEndPoint.MaxPort) 
 				{
-					throw new ArgumentOutOfRangeException(
+					throw log4net.Util.SystemInfo.CreateArgumentOutOfRangeException("value", (object)value,
 						"The value specified is less than " + 
 						IPEndPoint.MinPort.ToString(NumberFormatInfo.InvariantInfo) + 
 						" or greater than " + 
@@ -235,11 +239,13 @@ namespace log4net.Appender
 		/// indicating the TCP port number from which the underlying <see cref="UdpClient" /> will communicate.
 		/// </value>
 		/// <remarks>
+		/// <para>
 		/// The underlying <see cref="UdpClient" /> will bind to this port for sending messages.
-		/// </remarks>
-		/// <remarks>
+		/// </para>
+		/// <para>
 		/// Setting the value to 0 (the default) will cause the udp client not to bind to
 		/// a local port.
+		/// </para>
 		/// </remarks>
 		/// <exception cref="ArgumentOutOfRangeException">The value specified is less than <see cref="IPEndPoint.MinPort" /> or greater than <see cref="IPEndPoint.MaxPort" />.</exception>
 		public int LocalPort
@@ -249,7 +255,7 @@ namespace log4net.Appender
 			{
 				if (value != 0 && (value < IPEndPoint.MinPort || value > IPEndPoint.MaxPort))
 				{
-					throw new ArgumentOutOfRangeException(
+					throw log4net.Util.SystemInfo.CreateArgumentOutOfRangeException("value", (object)value,
 						"The value specified is less than " + 
 						IPEndPoint.MinPort.ToString(NumberFormatInfo.InvariantInfo) + 
 						" or greater than " + 
@@ -268,6 +274,11 @@ namespace log4net.Appender
 		/// <value>
 		/// The <see cref="Encoding"/> used to write the packets.
 		/// </value>
+		/// <remarks>
+		/// <para>
+		/// The <see cref="Encoding"/> used to write the packets.
+		/// </para>
+		/// </remarks>
 		public Encoding Encoding
 		{
 			get { return m_encoding; }
@@ -297,10 +308,6 @@ namespace log4net.Appender
 			set { this.m_client = value; }
 		}
 
-		#endregion Protected Instance Properties
-
-		#region Private Instance Properties
-
 		/// <summary>
 		/// Gets or sets the cached remote endpoint to which the logging events should be sent.
 		/// </summary>
@@ -312,20 +319,31 @@ namespace log4net.Appender
 		/// with the values of the <see cref="RemoteAddress" /> and <see cref="RemotePort"/>
 		/// properties.
 		/// </remarks>
-		private IPEndPoint RemoteEndPoint
+		protected IPEndPoint RemoteEndPoint
 		{
 			get { return this.m_remoteEndPoint; }
 			set { this.m_remoteEndPoint = value; }
 		}
 
-		#endregion Private Instance Properties
+		#endregion Protected Instance Properties
 
 		#region Implementation of IOptionHandler
 
 		/// <summary>
-		/// Initialise the appender based on the options set.
+		/// Initialize the appender based on the options set.
 		/// </summary>
 		/// <remarks>
+		/// <para>
+		/// This is part of the <see cref="IOptionHandler"/> delayed object
+		/// activation scheme. The <see cref="ActivateOptions"/> method must 
+		/// be called on this object after the configuration properties have
+		/// been set. Until <see cref="ActivateOptions"/> is called this
+		/// object is in an undefined state and must not be used. 
+		/// </para>
+		/// <para>
+		/// If any of the configuration properties are modified then 
+		/// <see cref="ActivateOptions"/> must be called again.
+		/// </para>
 		/// <para>
 		/// The appender will be ignored if no <see cref="RemoteAddress" /> was specified or 
 		/// an invalid remote or local TCP port number was specified.
@@ -343,7 +361,7 @@ namespace log4net.Appender
 			} 
 			else if (this.RemotePort < IPEndPoint.MinPort || this.RemotePort > IPEndPoint.MaxPort) 
 			{
-				throw new ArgumentOutOfRangeException(
+				throw log4net.Util.SystemInfo.CreateArgumentOutOfRangeException("this.RemotePort", (object)this.RemotePort,
 					"The RemotePort is less than " + 
 					IPEndPoint.MinPort.ToString(NumberFormatInfo.InvariantInfo) + 
 					" or greater than " + 
@@ -351,7 +369,7 @@ namespace log4net.Appender
 			} 
 			else if (this.LocalPort != 0 && (this.LocalPort < IPEndPoint.MinPort || this.LocalPort > IPEndPoint.MaxPort))
 			{
-				throw new ArgumentOutOfRangeException(
+				throw log4net.Util.SystemInfo.CreateArgumentOutOfRangeException("this.LocalPort", (object)this.LocalPort,
 					"The LocalPort is less than " + 
 					IPEndPoint.MinPort.ToString(NumberFormatInfo.InvariantInfo) + 
 					" or greater than " + 
@@ -369,7 +387,7 @@ namespace log4net.Appender
 		#region Override implementation of AppenderSkeleton
 
 		/// <summary>
-		/// This method is called by the <see cref="AppenderSkeleton.DoAppend"/> method.
+		/// This method is called by the <see cref="M:AppenderSkeleton.DoAppend(LoggingEvent)"/> method.
 		/// </summary>
 		/// <param name="loggingEvent">The event to log.</param>
 		/// <remarks>
@@ -382,25 +400,20 @@ namespace log4net.Appender
 		/// </remarks>
 		protected override void Append(LoggingEvent loggingEvent) 
 		{
-			// Set the hostname property
-			if (loggingEvent.Properties[LoggingEvent.HostNameProperty] == null)
-			{
-				loggingEvent.Properties[LoggingEvent.HostNameProperty] = SystemInfo.HostName;
-			}
-
 			try 
 			{
 				Byte [] buffer = m_encoding.GetBytes(RenderLoggingEvent(loggingEvent).ToCharArray());
 				this.Client.Send(buffer, buffer.Length, this.RemoteEndPoint);
 			} 
-			catch (Exception exc) 
+			catch (Exception ex) 
 			{
 				ErrorHandler.Error(
 					"Unable to send logging event to remote host " + 
 					this.RemoteAddress.ToString() + 
 					" on port " + 
 					this.RemotePort + ".", 
-					exc, ErrorCodes.WriteFailure);
+					ex, 
+					ErrorCode.WriteFailure);
 			}
 		}
 
@@ -408,6 +421,11 @@ namespace log4net.Appender
 		/// This appender requires a <see cref="Layout"/> to be set.
 		/// </summary>
 		/// <value><c>true</c></value>
+		/// <remarks>
+		/// <para>
+		/// This appender requires a <see cref="Layout"/> to be set.
+		/// </para>
+		/// </remarks>
 		override protected bool RequiresLayout
 		{
 			get { return true; }
@@ -418,10 +436,12 @@ namespace log4net.Appender
 		/// this <see cref="UdpAppender" /> instance.
 		/// </summary>
 		/// <remarks>
+		/// <para>
 		/// Disables the underlying <see cref="UdpClient" /> and releases all managed 
 		/// and unmanaged resources associated with the <see cref="UdpAppender" />.
+		/// </para>
 		/// </remarks>
-		public override void OnClose() 
+		override protected void OnClose() 
 		{
 			base.OnClose();
 
@@ -454,19 +474,29 @@ namespace log4net.Appender
 			{
 				if (this.LocalPort == 0)
 				{
+#if NETCF || NET_1_0 || SSCLI_1_0 || CLI_1_0
 					this.Client = new UdpClient();
+#else
+					this.Client = new UdpClient(RemoteAddress.AddressFamily);
+#endif
 				}
 				else
 				{
+#if NETCF || NET_1_0 || SSCLI_1_0 || CLI_1_0
 					this.Client = new UdpClient(this.LocalPort);
+#else
+					this.Client = new UdpClient(this.LocalPort, RemoteAddress.AddressFamily);
+#endif
 				}
 			} 
-			catch (Exception exc) 
+			catch (Exception ex) 
 			{
 				ErrorHandler.Error(
 					"Could not initialize the UdpClient connection on port " + 
 					this.LocalPort.ToString(NumberFormatInfo.InvariantInfo) + ".", 
-					exc, ErrorCodes.GenericFailure);
+					ex, 
+					ErrorCode.GenericFailure);
+
 				this.Client = null;
 			}
 		}

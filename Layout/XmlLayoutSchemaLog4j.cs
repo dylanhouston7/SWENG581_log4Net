@@ -1,12 +1,20 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
@@ -14,8 +22,8 @@ using System.Text;
 using System.Xml;
 using System.IO;
 
-using log4net.spi;
-using log4net.helpers;
+using log4net.Core;
+using log4net.Util;
 
 namespace log4net.Layout
 {
@@ -24,13 +32,17 @@ namespace log4net.Layout
 	/// </summary>
 	/// <remarks>
 	/// <para>
-	/// Formats the log events acording to the http://jakarta.apache.org/log4j schema.
+	/// Formats the log events according to the http://logging.apache.org/log4j schema.
 	/// </para>
 	/// </remarks>
+	/// <author>Nicko Cadell</author>
 	public class XmlLayoutSchemaLog4j : XmlLayoutBase
 	{
 		#region Static Members
 
+		/// <summary>
+		/// The 1st of January 1970 in UTC
+		/// </summary>
 		private static readonly DateTime s_date1970 = new DateTime(1970, 1, 1);
 
 		#endregion
@@ -112,44 +124,51 @@ method="run" file="Generator.java" line="94"/>
 
 		*/
 
+		/* Since log4j 1.3 the log4j:MDC has been combined into the log4j:properties element */
+
 		/// <summary>
-		/// Actualy do the writing of the xml
+		/// Actually do the writing of the xml
 		/// </summary>
 		/// <param name="writer">the writer to use</param>
 		/// <param name="loggingEvent">the event to write</param>
+		/// <remarks>
+		/// <para>
+		/// Generate XML that is compatible with the log4j schema.
+		/// </para>
+		/// </remarks>
 		override protected void FormatXml(XmlWriter writer, LoggingEvent loggingEvent)
 		{
 			// Translate logging events for log4j
 
 			// Translate hostname property
-			if (loggingEvent.Properties[LoggingEvent.HostNameProperty] != null && 
-				loggingEvent.Properties["log4jmachinename"] == null)
+			if (loggingEvent.LookupProperty(LoggingEvent.HostNameProperty) != null && 
+				loggingEvent.LookupProperty("log4jmachinename") == null)
 			{
-				loggingEvent.Properties["log4jmachinename"] = loggingEvent.Properties[LoggingEvent.HostNameProperty];
+				loggingEvent.GetProperties()["log4jmachinename"] = loggingEvent.LookupProperty(LoggingEvent.HostNameProperty);
 			}
 
 			// translate appdomain name
-			if (loggingEvent.Properties["log4japp"] == null && 
+			if (loggingEvent.LookupProperty("log4japp") == null && 
 				loggingEvent.Domain != null && 
 				loggingEvent.Domain.Length > 0)
 			{
-				loggingEvent.Properties["log4japp"] = loggingEvent.Domain;
+				loggingEvent.GetProperties()["log4japp"] = loggingEvent.Domain;
 			}
 
 			// translate identity name
 			if (loggingEvent.Identity != null && 
 				loggingEvent.Identity.Length > 0 && 
-				loggingEvent.Properties[LoggingEvent.IdentityProperty] == null)
+				loggingEvent.LookupProperty(LoggingEvent.IdentityProperty) == null)
 			{
-				loggingEvent.Properties[LoggingEvent.IdentityProperty] = loggingEvent.Identity;
+				loggingEvent.GetProperties()[LoggingEvent.IdentityProperty] = loggingEvent.Identity;
 			}
 
 			// translate user name
 			if (loggingEvent.UserName != null && 
 				loggingEvent.UserName.Length > 0 && 
-				loggingEvent.Properties[LoggingEvent.UserNameProperty] == null)
+				loggingEvent.LookupProperty(LoggingEvent.UserNameProperty) == null)
 			{
-				loggingEvent.Properties[LoggingEvent.UserNameProperty] = loggingEvent.UserName;
+				loggingEvent.GetProperties()[LoggingEvent.UserNameProperty] = loggingEvent.UserName;
 			}
 
 			// Write the start element
@@ -157,62 +176,60 @@ method="run" file="Generator.java" line="94"/>
 			writer.WriteAttributeString("logger", loggingEvent.LoggerName);
 
 			// Calculate the timestamp as the number of milliseconds since january 1970
-			TimeSpan timeSince1970 = loggingEvent.TimeStamp - s_date1970;
+			// 
+			// We must convert the TimeStamp to UTC before performing any mathematical
+			// operations. This allows use to take into account discontinuities
+			// caused by daylight savings time transitions.
+			TimeSpan timeSince1970 = loggingEvent.TimeStamp.ToUniversalTime() - s_date1970;
+
 			writer.WriteAttributeString("timestamp", XmlConvert.ToString((long)timeSince1970.TotalMilliseconds));
-			writer.WriteAttributeString("level", loggingEvent.Level.ToString());
+			writer.WriteAttributeString("level", loggingEvent.Level.DisplayName);
 			writer.WriteAttributeString("thread", loggingEvent.ThreadName);
     
 			// Append the message text
 			writer.WriteStartElement("log4j:message");
-			Transform.WriteEscapedXmlString(writer, loggingEvent.RenderedMessage);
+			Transform.WriteEscapedXmlString(writer, loggingEvent.RenderedMessage,this.InvalidCharReplacement);
 			writer.WriteEndElement();
 
-			if (loggingEvent.NestedContext != null && loggingEvent.NestedContext.Length > 0)
+			object ndcObj = loggingEvent.LookupProperty("NDC");
+			if (ndcObj != null)
 			{
-				// Append the NDC text
-				writer.WriteStartElement("log4j:NDC");
-				Transform.WriteEscapedXmlString(writer, loggingEvent.NestedContext);
-				writer.WriteEndElement();
+				string valueStr = loggingEvent.Repository.RendererMap.FindAndRender(ndcObj);
+
+				if (valueStr != null && valueStr.Length > 0)
+				{
+					// Append the NDC text
+					writer.WriteStartElement("log4j:NDC");
+					Transform.WriteEscapedXmlString(writer, valueStr,this.InvalidCharReplacement);
+					writer.WriteEndElement();
+				}
 			}
 
-			if (loggingEvent.MappedContext != null && loggingEvent.MappedContext.Count > 0)
+			// Append the properties text
+			PropertiesDictionary properties = loggingEvent.GetProperties();
+			if (properties.Count > 0)
 			{
-				// Append the MDC text
-				writer.WriteStartElement("log4j:MDC");
-				foreach(System.Collections.DictionaryEntry entry in loggingEvent.MappedContext)
+				writer.WriteStartElement("log4j:properties");
+				foreach(System.Collections.DictionaryEntry entry in properties)
 				{
 					writer.WriteStartElement("log4j:data");
-					writer.WriteAttributeString("name", entry.Key.ToString());
-					writer.WriteAttributeString("value", entry.Value.ToString());
+					writer.WriteAttributeString("name", (string)entry.Key);
+
+					// Use an ObjectRenderer to convert the object to a string
+					string valueStr = loggingEvent.Repository.RendererMap.FindAndRender(entry.Value);
+					writer.WriteAttributeString("value", valueStr);
+
 					writer.WriteEndElement();
 				}
 				writer.WriteEndElement();
 			}
 
-			if (loggingEvent.Properties != null)
-			{
-				// Append the properties text
-				string[] propKeys = loggingEvent.Properties.GetKeys();
-				if (propKeys.Length > 0)
-				{
-					writer.WriteStartElement("log4j:properties");
-					foreach(string key in propKeys)
-					{
-						writer.WriteStartElement("log4j:data");
-						writer.WriteAttributeString("name", key);
-						writer.WriteAttributeString("value", loggingEvent.Properties[key].ToString());
-						writer.WriteEndElement();
-					}
-					writer.WriteEndElement();
-				}
-			}
-
-			string exceptionStr = loggingEvent.GetExceptionStrRep();
+			string exceptionStr = loggingEvent.GetExceptionString();
 			if (exceptionStr != null && exceptionStr.Length > 0)
 			{
 				// Append the stack trace line
 				writer.WriteStartElement("log4j:throwable");
-				Transform.WriteEscapedXmlString(writer, exceptionStr);
+				Transform.WriteEscapedXmlString(writer, exceptionStr,this.InvalidCharReplacement);
 				writer.WriteEndElement();
 			}
 

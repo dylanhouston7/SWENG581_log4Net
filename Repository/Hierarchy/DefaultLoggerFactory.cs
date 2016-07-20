@@ -1,30 +1,50 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
-using System;
-
-using log4net.spi;
+using log4net.Core;
 
 namespace log4net.Repository.Hierarchy
 {
 	/// <summary>
-	/// Implementation of DefaultLoggerFactory.
+	/// Default implementation of <see cref="ILoggerFactory"/>
 	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// This default implementation of the <see cref="ILoggerFactory"/>
+	/// interface is used to create the default subclass
+	/// of the <see cref="Logger"/> object.
+	/// </para>
+	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	internal class DefaultLoggerFactory : ILoggerFactory
 	{
 		#region Internal Instance Constructors
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="DefaultLoggerFactory" /> class. 
+		/// Default constructor
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// Initializes a new instance of the <see cref="DefaultLoggerFactory" /> class. 
+		/// </para>
+		/// </remarks>
 		internal DefaultLoggerFactory()
 		{
 		}
@@ -34,23 +54,58 @@ namespace log4net.Repository.Hierarchy
 		#region Implementation of ILoggerFactory
 
 		/// <summary>
-		/// Constructs a new <see cref="Logger" /> instance with the specified name.
+		/// Create a new <see cref="Logger" /> instance
 		/// </summary>
+		/// <param name="repository">The <see cref="ILoggerRepository" /> that will own the <see cref="Logger" />.</param>
 		/// <param name="name">The name of the <see cref="Logger" />.</param>
-		/// <returns>A new <see cref="Logger" /> instance.</returns>
-		public Logger MakeNewLoggerInstance(string name) 
+		/// <returns>The <see cref="Logger" /> instance for the specified name.</returns>
+		/// <remarks>
+		/// <para>
+		/// Create a new <see cref="Logger" /> instance with the 
+		/// specified name.
+		/// </para>
+		/// <para>
+		/// Called by the <see cref="Hierarchy"/> to create
+		/// new named <see cref="Logger"/> instances.
+		/// </para>
+		/// <para>
+		/// If the <paramref name="name"/> is <c>null</c> then the root logger
+		/// must be returned.
+		/// </para>
+		/// </remarks>
+		public Logger CreateLogger(ILoggerRepository repository, string name) 
 		{
+			if (name == null)
+			{
+				return new RootLogger(repository.LevelMap.LookupWithDefault(Level.Debug));
+			}
 			return new LoggerImpl(name);
 		}
 
 		#endregion
 
-		internal class LoggerImpl : Logger
+		/// <summary>
+		/// Default internal subclass of <see cref="Logger"/>
+		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// This subclass has no additional behavior over the
+		/// <see cref="Logger"/> class but does allow instances
+		/// to be created.
+		/// </para>
+		/// </remarks>
+		internal sealed class LoggerImpl : Logger
 		{
 			/// <summary>
+			/// Construct a new Logger
+			/// </summary>
+			/// <param name="name">the name of the logger</param>
+			/// <remarks>
+			/// <para>
 			/// Initializes a new instance of the <see cref="LoggerImpl" /> class
 			/// with the specified name. 
-			/// </summary>
+			/// </para>
+			/// </remarks>
 			internal LoggerImpl(string name) : base(name)
 			{
 			}

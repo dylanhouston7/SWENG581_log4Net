@@ -1,12 +1,20 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
@@ -14,8 +22,8 @@ using System.Text;
 using System.IO;
 
 using log4net.Layout;
-using log4net.spi;
-using log4net.helpers;
+using log4net.Core;
+using log4net.Util;
 
 namespace log4net.Appender
 {
@@ -39,20 +47,24 @@ namespace log4net.Appender
 	/// cyclic buffer. This keeps memory requirements at a reasonable level while 
 	/// still delivering useful application context.
 	/// </para>
-	/// <para>
-	/// This appender sets the <c>hostname</c> property in the 
-	/// <see cref="LoggingEvent.Properties"/> collection to the name of 
-	/// the machine on which the event is logged.
-	/// </para>
 	/// </remarks>
+	/// <author>Niall Daley</author>
+	/// <author>Nicko Cadell</author>
 	public class SmtpPickupDirAppender : BufferingAppenderSkeleton
 	{
 		#region Public Instance Constructors
 
 		/// <summary>
+		/// Default constructor
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// Default constructor
+		/// </para>
+		/// </remarks>
 		public SmtpPickupDirAppender()
 		{
+			m_fileExtension = string.Empty; // Default to empty string, not null
 		}
 
 		#endregion Public Instance Constructors
@@ -65,6 +77,11 @@ namespace log4net.Appender
 		/// <value>
 		/// A semicolon-delimited list of e-mail addresses.
 		/// </value>
+		/// <remarks>
+		/// <para>
+		/// A semicolon-delimited list of e-mail addresses.
+		/// </para>
+		/// </remarks>
 		public string To 
 		{
 			get { return m_to; }
@@ -77,6 +94,11 @@ namespace log4net.Appender
 		/// <value>
 		/// The e-mail address of the sender.
 		/// </value>
+		/// <remarks>
+		/// <para>
+		/// The e-mail address of the sender.
+		/// </para>
+		/// </remarks>
 		public string From 
 		{
 			get { return m_from; }
@@ -89,6 +111,11 @@ namespace log4net.Appender
 		/// <value>
 		/// The subject line of the e-mail message.
 		/// </value>
+		/// <remarks>
+		/// <para>
+		/// The subject line of the e-mail message.
+		/// </para>
+		/// </remarks>
 		public string Subject 
 		{
 			get { return m_subject; }
@@ -96,13 +123,71 @@ namespace log4net.Appender
 		}
   
 		/// <summary>
+		/// Gets or sets the path to write the messages to.
+		/// </summary>
+		/// <remarks>
+		/// <para>
 		/// Gets or sets the path to write the messages to. This should be the same
 		/// as that used by the agent sending the messages.
-		/// </summary>
+		/// </para>
+		/// </remarks>
 		public string PickupDir
 		{
 			get { return m_pickupDir; }
-			set { m_pickupDir = ConvertToFullPath(value.Trim()); }
+			set { m_pickupDir = value; }
+		}
+
+ 		/// <summary>
+		/// Gets or sets the file extension for the generated files
+		/// </summary>
+		/// <value>
+		/// The file extension for the generated files
+		/// </value>
+		/// <remarks>
+		/// <para>
+		/// The file extension for the generated files
+		/// </para>
+		/// </remarks>
+		public string FileExtension
+		{
+			get { return m_fileExtension; }
+			set
+			{
+				m_fileExtension = value;
+				if (m_fileExtension == null)
+				{
+					m_fileExtension = string.Empty;
+				}
+				// Make sure any non empty extension starts with a dot
+#if NET_2_0 || MONO_2_0
+				if (!string.IsNullOrEmpty(m_fileExtension) && !m_fileExtension.StartsWith("."))
+#else
+				if (m_fileExtension != null && m_fileExtension.Length > 0 && !m_fileExtension.StartsWith("."))
+#endif
+				{
+					m_fileExtension = "." + m_fileExtension;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets the <see cref="SecurityContext"/> used to write to the pickup directory.
+		/// </summary>
+		/// <value>
+		/// The <see cref="SecurityContext"/> used to write to the pickup directory.
+		/// </value>
+		/// <remarks>
+		/// <para>
+		/// Unless a <see cref="SecurityContext"/> specified here for this appender
+		/// the <see cref="SecurityContextProvider.DefaultProvider"/> is queried for the
+		/// security context to use. The default behavior is to use the security context
+		/// of the current thread.
+		/// </para>
+		/// </remarks>
+		public SecurityContext SecurityContext 
+		{
+			get { return m_securityContext; }
+			set { m_securityContext = value; }
 		}
 
 		#endregion Public Instance Properties
@@ -113,48 +198,62 @@ namespace log4net.Appender
 		/// Sends the contents of the cyclic buffer as an e-mail message.
 		/// </summary>
 		/// <param name="events">The logging events to send.</param>
+		/// <remarks>
+		/// <para>
+		/// Sends the contents of the cyclic buffer as an e-mail message.
+		/// </para>
+		/// </remarks>
 		override protected void SendBuffer(LoggingEvent[] events) 
 		{
 			// Note: this code already owns the monitor for this
-			// appender. This frees us from needing to synchronize on 'cb'.
+			// appender. This frees us from needing to synchronize again.
 			try 
-			{	  
-				StringBuilder sbuf = new StringBuilder();
+			{
+				string filePath = null;
+				StreamWriter writer = null;
 
-				string t = Layout.Header;
-				if (t != null)
+				// Impersonate to open the file
+				using(SecurityContext.Impersonate(this))
 				{
-					sbuf.Append(t);
+					filePath = Path.Combine(m_pickupDir, SystemInfo.NewGuid().ToString("N") + m_fileExtension);
+					writer = File.CreateText(filePath);
 				}
 
-				string hostName = SystemInfo.HostName;
-
-				for(int i = 0; i < events.Length; i++) 
+				if (writer == null)
 				{
-					// Set the hostname property
-					if (events[i].Properties[LoggingEvent.HostNameProperty] == null)
+					ErrorHandler.Error("Failed to create output file for writing ["+filePath+"]", null, ErrorCode.FileOpenFailure);
+				}
+				else
+				{
+					using(writer)
 					{
-						events[i].Properties[LoggingEvent.HostNameProperty] = hostName;
+						writer.WriteLine("To: " + m_to);
+						writer.WriteLine("From: " + m_from);
+						writer.WriteLine("Subject: " + m_subject);
+						writer.WriteLine("Date: " + DateTime.UtcNow.ToString("r"));
+						writer.WriteLine("");
+
+						string t = Layout.Header;
+						if (t != null)
+						{
+							writer.Write(t);
+						}
+
+						for(int i = 0; i < events.Length; i++) 
+						{
+							// Render the event and append the text to the buffer
+							RenderLoggingEvent(writer, events[i]);
+						}
+
+						t = Layout.Footer;
+						if (t != null)
+						{
+							writer.Write(t);
+						}
+
+						writer.WriteLine("");
+						writer.WriteLine(".");
 					}
-
-					// Render the event and append the text to the buffer
-					sbuf.Append(RenderLoggingEvent(events[i]));
-				}
-
-				t = Layout.Footer;
-				if (t != null)
-				{
-					sbuf.Append(t);
-				}
-
-				using(StreamWriter writer = File.CreateText(Path.Combine(m_pickupDir, SystemInfo.NewGuid().ToString("N"))))
-				{
-					writer.WriteLine("To: " + m_to);
-					writer.WriteLine("From: " + m_from);
-					writer.WriteLine("Subject: " + m_subject);
-					writer.WriteLine("");
-					writer.WriteLine(sbuf.ToString());
-					writer.WriteLine(".");
 				}
 			} 
 			catch(Exception e) 
@@ -168,9 +267,45 @@ namespace log4net.Appender
 		#region Override implementation of AppenderSkeleton
 
 		/// <summary>
+		/// Activate the options on this appender. 
+		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// This is part of the <see cref="IOptionHandler"/> delayed object
+		/// activation scheme. The <see cref="ActivateOptions"/> method must 
+		/// be called on this object after the configuration properties have
+		/// been set. Until <see cref="ActivateOptions"/> is called this
+		/// object is in an undefined state and must not be used. 
+		/// </para>
+		/// <para>
+		/// If any of the configuration properties are modified then 
+		/// <see cref="ActivateOptions"/> must be called again.
+		/// </para>
+		/// </remarks>
+		override public void ActivateOptions() 
+		{	
+			base.ActivateOptions();
+
+			if (m_securityContext == null)
+			{
+				m_securityContext = SecurityContextProvider.DefaultProvider.CreateSecurityContext(this);
+			}
+
+			using(SecurityContext.Impersonate(this))
+			{
+				m_pickupDir = ConvertToFullPath(m_pickupDir.Trim());
+			}
+		}
+
+		/// <summary>
 		/// This appender requires a <see cref="Layout"/> to be set.
 		/// </summary>
 		/// <value><c>true</c></value>
+		/// <remarks>
+		/// <para>
+		/// This appender requires a <see cref="Layout"/> to be set.
+		/// </para>
+		/// </remarks>
 		override protected bool RequiresLayout
 		{
 			get { return true; }
@@ -184,6 +319,7 @@ namespace log4net.Appender
 		/// Convert a path into a fully qualified path.
 		/// </summary>
 		/// <param name="path">The path to convert.</param>
+		/// <returns>The fully qualified path.</returns>
 		/// <remarks>
 		/// <para>
 		/// Converts the path specified to a fully
@@ -192,20 +328,9 @@ namespace log4net.Appender
 		/// directory.
 		/// </para>
 		/// </remarks>
-		/// <returns>The fully qualified path.</returns>
 		protected static string ConvertToFullPath(string path)
 		{
-			if (path == null)
-			{
-				throw new ArgumentNullException("path");
-			}
-
-			if (SystemInfo.ApplicationBaseDirectory != null)
-			{
-				// Note that Path.Combine will return the second path if it is rooted
-				return Path.GetFullPath(Path.Combine(SystemInfo.ApplicationBaseDirectory, path));
-			}
-			return Path.GetFullPath(path);
+			return SystemInfo.ConvertToFullPath(path);
 		}
 
 		#endregion Protected Static Methods
@@ -216,6 +341,12 @@ namespace log4net.Appender
 		private string m_from;
 		private string m_subject;
 		private string m_pickupDir;
+		private string m_fileExtension;
+
+		/// <summary>
+		/// The security context to use for privileged calls
+		/// </summary>
+		private SecurityContext m_securityContext;
 
 		#endregion Private Instance Fields
 	}

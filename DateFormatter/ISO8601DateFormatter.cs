@@ -1,12 +1,20 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
@@ -15,16 +23,28 @@ using System.Text;
 namespace log4net.DateFormatter
 {
 	/// <summary>
-	/// Formats the <see cref="DateTime"/> specified as a string: 'YYYY-MM-dd HH:mm:ss,SSS'.
+	/// Formats the <see cref="DateTime"/> as <c>"yyyy-MM-dd HH:mm:ss,fff"</c>.
 	/// </summary>
-	public class ISO8601DateFormatter : AbsoluteTimeDateFormatter
+	/// <remarks>
+	/// <para>
+	/// Formats the <see cref="DateTime"/> specified as a string: <c>"yyyy-MM-dd HH:mm:ss,fff"</c>.
+	/// </para>
+	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
+	public class Iso8601DateFormatter : AbsoluteTimeDateFormatter
 	{
 		#region Public Instance Constructors
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="ISO8601DateFormatter" /> class.
+		/// Default constructor
 		/// </summary>
-		public ISO8601DateFormatter()
+		/// <remarks>
+		/// <para>
+		/// Initializes a new instance of the <see cref="Iso8601DateFormatter" /> class.
+		/// </para>
+		/// </remarks>
+		public Iso8601DateFormatter()
 		{
 		}
 
@@ -33,12 +53,19 @@ namespace log4net.DateFormatter
 		#region Override implementation of AbsoluteTimeDateFormatter
 
 		/// <summary>
-		/// Formats the date specified as a string: 'YYYY-MM-dd HH:mm:ss'
-		/// the base class will append the ',SSS' milliseconds section.
-		/// We will only be called at most once per second.
+		/// Formats the date without the milliseconds part
 		/// </summary>
 		/// <param name="dateToFormat">The date to format.</param>
 		/// <param name="buffer">The string builder to write to.</param>
+		/// <remarks>
+		/// <para>
+		/// Formats the date specified as a string: <c>"yyyy-MM-dd HH:mm:ss"</c>.
+		/// </para>
+		/// <para>
+		/// The base class will append the <c>",fff"</c> milliseconds section.
+		/// This method will only be called at most once per second.
+		/// </para>
+		/// </remarks>
 		override protected void FormatDateWithoutMillis(DateTime dateToFormat, StringBuilder buffer)
 		{
 			buffer.Append(dateToFormat.Year);
