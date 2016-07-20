@@ -11,8 +11,7 @@ using log4net.Core;
 namespace log4netUnitTest
 {
     [TestClass]
-    class FileAppenderUnitTest
+    class SystemIntegrationTest
     {
-
     }
 }
