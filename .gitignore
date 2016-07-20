@@ -1,0 +1,6 @@
+log4netUnitTest\obj
+log4netUnitTest\bin
+obj
+build
+.vs
+log4net.csproj.user
