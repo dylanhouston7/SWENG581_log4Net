@@ -1,6 +1,8 @@
+.vs/
 log4netUnitTest/obj/
 log4netUnitTest/bin/
-obj
-build
-.vs
+obj/
+bin/
+build/
+TestResults/
 log4net.csproj.user
