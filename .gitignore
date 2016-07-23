@@ -6,3 +6,4 @@ bin/
 build/
 TestResults/
 log4net.csproj.user
+*.cd
