@@ -22,7 +22,7 @@ namespace log4netUnitTest
             _log = LogManager.GetLogger("fileappenderlog");
             _logger = (log4net.Repository.Hierarchy.Logger)_log.Logger;
             _logger.Hierarchy.Configured = true;
-            _logger.Level = _logger.Hierarchy.LevelMap["Error"];
+            _logger.Level = _logger.Hierarchy.LevelMap["Info"];
 
             _fileAppender = new FileAppender();
 
@@ -30,7 +30,9 @@ namespace log4netUnitTest
             _fileAppender.File = _fileName;
             _fileAppender.AppendToFile = true;
 
+            _fileAppender.LockingModel = new FileAppender.MinimalLock();
             _fileAppender.ActivateOptions();
+            
 
             _logger.AddAppender(_fileAppender);
 
@@ -42,13 +44,21 @@ namespace log4netUnitTest
             var testString = "Append message";
             var outputString = string.Empty;
 
+           
             var mockWriter = new Mock<TextWriter>(MockBehavior.Strict);
             mockWriter.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => outputString = s);
 
             _fileAppender.Layout = _basicLayout;
-
+            var t = mockWriter.Object;
+            
             //Assign mock writer
             _fileAppender.Writer = mockWriter.Object;
+            _fileAppender.ActivateOptions();
+
+            //var mockLock = new Mock<FileAppender.ExclusiveLock>();
+            //mockLock.Setup(x => x.AcquireLock()).Returns(new FileStream(_fileName,FileMode.Open));
+
+            //_fileAppender.LockingModel = mockLock.Object;
 
             var eventData = new LoggingEventData();
             eventData.Message = testString;
@@ -56,6 +66,8 @@ namespace log4netUnitTest
             var loggingEvent = new LoggingEvent(eventData);
             _fileAppender.DoAppend(loggingEvent);
 
+            //Assert
+            Assert.AreEqual(testString, outputString);
 
         }
 
@@ -143,9 +155,18 @@ namespace log4netUnitTest
 
             _fileAppender.Layout = _basicLayout;
 
+            var level = new log4net.Filter.LevelMatchFilter();
+            level.LevelToMatch = Level.Info;
+
+
+            _fileAppender.AddFilter(level);
+
+            _fileAppender.LockingModel = new FileAppender.MinimalLock();
+
             //Assign mock writer
             _fileAppender.Writer = mockWriter.Object;
 
+            
             //Act
             _log.Info(testString);
 
