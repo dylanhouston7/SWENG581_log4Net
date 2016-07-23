@@ -51,7 +51,6 @@
   </Choose>
   <ItemGroup>
     <Compile Include="AppenderSkeletonUnitTest.cs" />
-    <Compile Include="SystemIntegrationTest.cs" />
     <Compile Include="ConsoleAppenderUnitTest.cs" />
     <Compile Include="FileAppenderUnitTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
