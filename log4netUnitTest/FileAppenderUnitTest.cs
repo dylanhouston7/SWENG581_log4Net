@@ -84,6 +84,7 @@ namespace log4netUnitTest
 
             //Assign mock writer
             _fileAppender.Writer = mockWriter.Object;
+            _fileAppender.ActivateOptions();
 
             var eventData = new LoggingEventData();
             eventData.Message = testString;
@@ -107,6 +108,7 @@ namespace log4netUnitTest
         [TestMethod]
         public void Should_NotWrite_With_Different_Filter_Level()
         {
+            
             var testString = "Append message";
             var outputString = string.Empty;
 
@@ -117,6 +119,7 @@ namespace log4netUnitTest
 
             //Assign mock writer
             _fileAppender.Writer = mockWriter.Object;
+            _fileAppender.ActivateOptions();
 
             //Assign Different Level
             var eventData = new LoggingEventData();
@@ -128,7 +131,7 @@ namespace log4netUnitTest
 
 
             var level = new log4net.Filter.LevelMatchFilter();
-            level.LevelToMatch = Level.Info;
+            level.LevelToMatch = Level.Error;
 
 
             _fileAppender.AddFilter(level);
@@ -165,8 +168,8 @@ namespace log4netUnitTest
 
             //Assign mock writer
             _fileAppender.Writer = mockWriter.Object;
+            _fileAppender.ActivateOptions();
 
-            
             //Act
             _log.Info(testString);
 
@@ -189,6 +192,7 @@ namespace log4netUnitTest
 
             //Assign mock writer
             _fileAppender.Writer = mockWriter.Object;
+            _fileAppender.ActivateOptions();
 
             //Act
             _log.Debug(testString);
@@ -211,6 +215,7 @@ namespace log4netUnitTest
 
             //Assign mock writer
             _fileAppender.Writer = mockWriter.Object;
+            _fileAppender.ActivateOptions();
 
             //Act
             _log.Fatal(testString);
@@ -233,6 +238,7 @@ namespace log4netUnitTest
 
             //Assign mock writer
             _fileAppender.Writer = mockWriter.Object;
+            _fileAppender.ActivateOptions();
 
             //Act
             _log.Warn(testString);
