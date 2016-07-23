@@ -1,24 +1,31 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
 
-using log4net.helpers;
-using log4net.spi;
-
+using log4net.Util;
+using log4net.Core;
 
 namespace log4net.Repository.Hierarchy
 {
 	/// <summary>
-	/// The <see cref="RootLogger" /> sits at the top of the logger hierarchy. 
+	/// The <see cref="RootLogger" /> sits at the root of the logger hierarchy tree. 
 	/// </summary>
 	/// <remarks>
 	/// <para>
@@ -32,18 +39,25 @@ namespace log4net.Repository.Hierarchy
 	/// level field without walking the hierarchy.
 	/// </para>
 	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	public class RootLogger : Logger
 	{
 		#region Public Instance Constructors
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="RootLogger" /> class with
-		/// the specified logging level.
+		/// Construct a <see cref="RootLogger"/>
 		/// </summary>
 		/// <param name="level">The level to assign to the root logger.</param>
 		/// <remarks>
+		/// <para>
+		/// Initializes a new instance of the <see cref="RootLogger" /> class with
+		/// the specified logging level.
+		/// </para>
+		/// <para>
 		/// The root logger names itself as "root". However, the root
 		/// logger cannot be retrieved by name.
+		/// </para>
 		/// </remarks>
 		public RootLogger(Level level) : base("root")
 		{
@@ -58,6 +72,13 @@ namespace log4net.Repository.Hierarchy
 		/// Gets the assigned level value without walking the logger hierarchy.
 		/// </summary>
 		/// <value>The assigned level value without walking the logger hierarchy.</value>
+		/// <remarks>
+		/// <para>
+		/// Because the root logger cannot have a parent and its level
+		/// must not be <c>null</c> this property just returns the
+		/// value of <see cref="Logger.Level"/>.
+		/// </para>
+		/// </remarks>
 		override public Level EffectiveLevel 
 		{
 			get 
@@ -67,16 +88,17 @@ namespace log4net.Repository.Hierarchy
 		}
 
 		/// <summary>
-		/// Gets or sets the assigned <see cref="Level"/>, if any, for the root
-		/// logger.  
+		/// Gets or sets the assigned <see cref="Level"/> for the root logger.  
 		/// </summary>
 		/// <value>
 		/// The <see cref="Level"/> of the root logger.
 		/// </value>
-		/// <summary>
-		/// Setting the level of the root logger to a null reference
+		/// <remarks>
+		/// <para>
+		/// Setting the level of the root logger to a <c>null</c> reference
 		/// may have catastrophic results. We prevent this here.
-		/// </summary>
+		/// </para>
+		/// </remarks>
 		override public Level Level
 		{
 			get { return base.Level; }
@@ -84,7 +106,7 @@ namespace log4net.Repository.Hierarchy
 			{
 				if (value == null) 
 				{
-					LogLog.Error("RootLogger: You have tried to set a null level to root.", new LogException());
+					LogLog.Error(declaringType, "You have tried to set a null level to root.", new LogException());
 				}
 				else 
 				{
@@ -94,5 +116,18 @@ namespace log4net.Repository.Hierarchy
 		}
 
 		#endregion Override implementation of Logger
+
+	    #region Private Static Fields
+
+	    /// <summary>
+	    /// The fully qualified type of the RootLogger class.
+	    /// </summary>
+	    /// <remarks>
+	    /// Used by the internal logger to record the Type of the
+	    /// log message.
+	    /// </remarks>
+	    private readonly static Type declaringType = typeof(RootLogger);
+
+	    #endregion Private Static Fields
 	}
 }

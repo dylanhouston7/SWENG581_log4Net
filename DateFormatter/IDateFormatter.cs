@@ -1,31 +1,55 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
-using System.Text;
+using System.IO;
 
 namespace log4net.DateFormatter
 {
 	/// <summary>
+	/// Render a <see cref="DateTime"/> as a string.
+	/// </summary>
+	/// <remarks>
+	/// <para>
 	/// Interface to abstract the rendering of a <see cref="DateTime"/>
 	/// instance into a string.
-	/// </summary>
+	/// </para>
+	/// <para>
+	/// The <see cref="FormatDate"/> method is used to render the
+	/// date to a text writer.
+	/// </para>
+	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	public interface IDateFormatter
 	{
 		/// <summary>
 		/// Formats the specified date as a string.
 		/// </summary>
 		/// <param name="dateToFormat">The date to format.</param>
-		/// <param name="buffer">The string builder to write to.</param>
-		/// <returns>The string builder passed.</returns>
-		StringBuilder FormatDate(DateTime dateToFormat, StringBuilder buffer);
+		/// <param name="writer">The writer to write to.</param>
+		/// <remarks>
+		/// <para>
+		/// Format the <see cref="DateTime"/> as a string and write it
+		/// to the <see cref="TextWriter"/> provided.
+		/// </para>
+		/// </remarks>
+		void FormatDate(DateTime dateToFormat, TextWriter writer);
 	}
 }

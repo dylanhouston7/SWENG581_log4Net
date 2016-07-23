@@ -1,21 +1,40 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
+
+// MONO 1.0 Beta mcs does not like #if !A && !B && !C syntax
+
+// .NET Compact Framework 1.0 has no support for Win32 NetMessageBufferSend API
+#if !NETCF 
+// MONO 1.0 has no support for Win32 NetMessageBufferSend API
+#if !MONO 
+// SSCLI 1.0 has no support for Win32 NetMessageBufferSend API
+#if !SSCLI
+// We don't want framework or platform specific code in the CLI version of log4net
+#if !CLI_1_0
 
 using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
 
-using log4net.helpers;
+using log4net.Util;
 using log4net.Layout;
-using log4net.spi;
+using log4net.Core;
 
 
 namespace log4net.Appender 
@@ -49,10 +68,10 @@ namespace log4net.Appender
 	///         <term>Send a message to a user account on the local machine</term>
 	///         <description>
 	///             <para>
-	///             <paramref name="Server"/> = &lt;name of the local machine&gt;
+	///             <see cref="NetSendAppender.Server"/> = &lt;name of the local machine&gt;
 	///             </para>
 	///             <para>
-	///             <paramref name="Recipient"/> = &lt;user name&gt;
+	///             <see cref="NetSendAppender.Recipient"/> = &lt;user name&gt;
 	///             </para>
 	///         </description>
 	///     </item>
@@ -60,10 +79,10 @@ namespace log4net.Appender
 	///         <term>Send a message to a user account on a remote machine</term>
 	///         <description>
 	///             <para>
-	///             <paramref name="Server"/> = &lt;name of the remote machine&gt;
+	///             <see cref="NetSendAppender.Server"/> = &lt;name of the remote machine&gt;
 	///             </para>
 	///             <para>
-	///             <paramref name="Recipient"/> = &lt;user name&gt;
+	///             <see cref="NetSendAppender.Recipient"/> = &lt;user name&gt;
 	///             </para>
 	///         </description>
 	///     </item>
@@ -71,10 +90,10 @@ namespace log4net.Appender
 	///         <term>Send a message to a domain user account</term>
 	///         <description>
 	///             <para>
-	///             <paramref name="Server"/> = &lt;name of a domain controller | uninitialized&gt;
+	///             <see cref="NetSendAppender.Server"/> = &lt;name of a domain controller | uninitialized&gt;
 	///             </para>
 	///             <para>
-	///             <paramref name="Recipient"/> = &lt;user name&gt;
+	///             <see cref="NetSendAppender.Recipient"/> = &lt;user name&gt;
 	///             </para>
 	///         </description>
 	///     </item>
@@ -82,7 +101,7 @@ namespace log4net.Appender
 	///         <term>Send a message to all the names in a workgroup or domain</term>
 	///         <description>
 	///             <para>
-	///             <paramref name="Recipient"/> = &lt;workgroup name | domain name&gt;*
+	///             <see cref="NetSendAppender.Recipient"/> = &lt;workgroup name | domain name&gt;*
 	///             </para>
 	///         </description>
 	///     </item>
@@ -90,10 +109,10 @@ namespace log4net.Appender
 	///         <term>Send a message from the local machine to a remote machine</term>
 	///         <description>
 	///             <para>
-	///             <paramref name="Server"/> = &lt;name of the local machine | uninitialized&gt;
+	///             <see cref="NetSendAppender.Server"/> = &lt;name of the local machine | uninitialized&gt;
 	///             </para>
 	///             <para>
-	///             <paramref name="Recipient"/> = &lt;name of the remote machine&gt;
+	///             <see cref="NetSendAppender.Recipient"/> = &lt;name of the remote machine&gt;
 	///             </para>
 	///         </description>
 	///     </item>
@@ -111,16 +130,16 @@ namespace log4net.Appender
 	/// using this appender from the local machine, named 
 	/// LOCAL_PC, to machine OPERATOR_PC :
 	/// </para>
-	/// <code>
-	/// &lt;appender name="NetSendAppender_Operator" type="log4net.Appender.NetSendAppender, log4net"&gt;
-	///     &lt;param name="Server" value="LOCAL_PC" /&gt;
-	///     &lt;param name="Recipient" value="OPERATOR_PC" /&gt;
-	///     &lt;layout type="log4net.Layout.PatternLayout, log4net"&gt;
-	///         &lt;param name="ConversionPattern" value="%-5p %c [%x] - %m%n" /&gt;
-	///     &lt;/layout&gt;
-	/// &lt;/appender&gt;
+	/// <code lang="XML" escaped="true">
+	/// <appender name="NetSendAppender_Operator" type="log4net.Appender.NetSendAppender">
+	///     <server value="LOCAL_PC" />
+	///     <recipient value="OPERATOR_PC" />
+	///     <layout type="log4net.Layout.PatternLayout" value="%-5p %c [%x] - %m%n" />
+	/// </appender>
 	/// </code>
 	/// </example>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	public class NetSendAppender : AppenderSkeleton 
 	{
 		#region Member Variables
@@ -139,6 +158,11 @@ namespace log4net.Appender
 		/// The message alias to which the message should be sent.
 		/// </summary>
 		private string m_recipient;
+
+		/// <summary>
+		/// The security context to use for privileged calls
+		/// </summary>
+		private SecurityContext m_securityContext;
 
 		#endregion
 
@@ -208,14 +232,45 @@ namespace log4net.Appender
 			set { m_server = value; }
 		}
 
+		/// <summary>
+		/// Gets or sets the <see cref="SecurityContext"/> used to call the NetSend method.
+		/// </summary>
+		/// <value>
+		/// The <see cref="SecurityContext"/> used to call the NetSend method.
+		/// </value>
+		/// <remarks>
+		/// <para>
+		/// Unless a <see cref="SecurityContext"/> specified here for this appender
+		/// the <see cref="SecurityContextProvider.DefaultProvider"/> is queried for the
+		/// security context to use. The default behavior is to use the security context
+		/// of the current thread.
+		/// </para>
+		/// </remarks>
+		public SecurityContext SecurityContext 
+		{
+			get { return m_securityContext; }
+			set { m_securityContext = value; }
+		}
+
 		#endregion
 
 		#region Implementation of IOptionHandler
 
 		/// <summary>
-		/// Initialise the appender based on the options set.
+		/// Initialize the appender based on the options set.
 		/// </summary>
 		/// <remarks>
+		/// <para>
+		/// This is part of the <see cref="IOptionHandler"/> delayed object
+		/// activation scheme. The <see cref="ActivateOptions"/> method must 
+		/// be called on this object after the configuration properties have
+		/// been set. Until <see cref="ActivateOptions"/> is called this
+		/// object is in an undefined state and must not be used. 
+		/// </para>
+		/// <para>
+		/// If any of the configuration properties are modified then 
+		/// <see cref="ActivateOptions"/> must be called again.
+		/// </para>
 		/// <para>
 		/// The appender will be ignored if no <see cref="Recipient" /> was specified.
 		/// </para>
@@ -229,6 +284,11 @@ namespace log4net.Appender
 			{
 				throw new ArgumentNullException("Recipient", "The required property 'Recipient' was not specified.");
 			}
+
+			if (m_securityContext == null)
+			{
+				m_securityContext = SecurityContextProvider.DefaultProvider.CreateSecurityContext(this);
+			}
 		}
 
 		#endregion
@@ -236,7 +296,7 @@ namespace log4net.Appender
 		#region Override implementation of AppenderSkeleton
 
 		/// <summary>
-		/// This method is called by the <see cref="AppenderSkeleton.DoAppend"/> method.
+		/// This method is called by the <see cref="M:AppenderSkeleton.DoAppend(LoggingEvent)"/> method.
 		/// </summary>
 		/// <param name="loggingEvent">The event to log.</param>
 		/// <remarks>
@@ -244,19 +304,32 @@ namespace log4net.Appender
 		/// Sends the event using a network message.
 		/// </para>
 		/// </remarks>
-		protected override void Append(LoggingEvent loggingEvent) 
+#if NET_4_0 || MONO_4_0
+        [System.Security.SecuritySafeCritical]
+#endif
+        [System.Security.Permissions.SecurityPermission(System.Security.Permissions.SecurityAction.Demand, UnmanagedCode = true)]
+        protected override void Append(LoggingEvent loggingEvent) 
 		{
+			NativeError nativeError = null;
+
+			// Render the event in the callers security context
 			string renderedLoggingEvent = RenderLoggingEvent(loggingEvent);
 
-			// Send the message
-			int returnValue = NetMessageBufferSend(this.Server, this.Recipient, this.Sender, renderedLoggingEvent, renderedLoggingEvent.Length * Marshal.SystemDefaultCharSize);   
-
-			// Log the error if the message could not be sent
-			if (returnValue != 0) 
+			using(m_securityContext.Impersonate(this))
 			{
-				// Lookup the native error
-				NativeError nativeError = NativeError.GetError(returnValue);
+				// Send the message
+				int returnValue = NetMessageBufferSend(this.Server, this.Recipient, this.Sender, renderedLoggingEvent, renderedLoggingEvent.Length * Marshal.SystemDefaultCharSize);   
 
+				// Log the error if the message could not be sent
+				if (returnValue != 0) 
+				{
+					// Lookup the native error
+					nativeError = NativeError.GetError(returnValue);
+				}
+			}
+
+			if (nativeError != null)
+			{
 				// Handle the error over to the ErrorHandler
 				ErrorHandler.Error(nativeError.ToString() + " (Params: Server=" + this.Server + ", Recipient=" + this.Recipient + ", Sender=" + this.Sender + ")");
 			}
@@ -266,6 +339,11 @@ namespace log4net.Appender
 		/// This appender requires a <see cref="Layout"/> to be set.
 		/// </summary>
 		/// <value><c>true</c></value>
+		/// <remarks>
+		/// <para>
+		/// This appender requires a <see cref="Layout"/> to be set.
+		/// </para>
+		/// </remarks>
 		override protected bool RequiresLayout
 		{
 			get { return true; }
@@ -285,7 +363,7 @@ namespace log4net.Appender
 		/// <param name="bufferSize">The length, in bytes, of the message text.</param>
 		/// <remarks>
 		/// <para>
-		/// The following restrictions apply for sending network messages :
+		/// The following restrictions apply for sending network messages:
 		/// </para>
 		/// <para>
 		/// <list type="table">
@@ -340,3 +418,8 @@ namespace log4net.Appender
 		#endregion
 	}
 }
+
+#endif // !CLI_1_0
+#endif // !SSCLI
+#endif // !MONO
+#endif // !NETCF

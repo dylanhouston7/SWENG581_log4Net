@@ -1,34 +1,41 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
+using System.IO;
 
 using log4net;
-using log4net.spi;
+using log4net.Core;
 
 namespace log4net.Layout
 {
 	/// <summary>
-	/// Interface for raw layout objects
+	/// Adapts any <see cref="ILayout"/> to a <see cref="IRawLayout"/>
 	/// </summary>
 	/// <remarks>
-	/// <para>Interface used to format a <see cref="LoggingEvent"/>
-	/// to an object.</para>
-	/// 
-	/// <para>This interface should not be confused with the
-	/// <see cref="ILayout"/> interface. This interface is used in
-	/// only certain specialised situations where a raw object is
-	/// required rather than a formatted string. The <see cref="ILayout"/>
-	/// is not generally usefull than this interface.</para>
+	/// <para>
+	/// Where an <see cref="IRawLayout"/> is required this adapter
+	/// allows a <see cref="ILayout"/> to be specified.
+	/// </para>
 	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	public class Layout2RawLayoutAdapter : IRawLayout
 	{
 		#region Member Variables
@@ -43,9 +50,14 @@ namespace log4net.Layout
 		#region Constructors
 
 		/// <summary>
-		/// Construst a new adapter
+		/// Construct a new adapter
 		/// </summary>
 		/// <param name="layout">the layout to adapt</param>
+		/// <remarks>
+		/// <para>
+		/// Create the adapter for the specified <paramref name="layout"/>.
+		/// </para>
+		/// </remarks>
 		public Layout2RawLayoutAdapter(ILayout layout)
 		{
 			m_layout = layout;
@@ -61,13 +73,19 @@ namespace log4net.Layout
 		/// <param name="loggingEvent">The event to format</param>
 		/// <returns>returns the formatted event</returns>
 		/// <remarks>
-		/// <para>Format the logging event as an object.</para>
-		/// <para>Uses the <see cref="ILayout"/> object supplied to 
-		/// the constructor to perform the formatting.</para>
+		/// <para>
+		/// Format the logging event as an object.
+		/// </para>
+		/// <para>
+		/// Uses the <see cref="ILayout"/> object supplied to 
+		/// the constructor to perform the formatting.
+		/// </para>
 		/// </remarks>
 		virtual public object Format(LoggingEvent loggingEvent)
 		{
-			return m_layout.Format(loggingEvent);
+			StringWriter writer = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
+			m_layout.Format(writer, loggingEvent);
+			return writer.ToString();
 		}
 
 		#endregion

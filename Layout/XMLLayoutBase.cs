@@ -1,21 +1,29 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
+using System.IO;
 using System.Text;
 using System.Xml;
-using System.IO;
 
-using log4net.spi;
-using log4net.helpers;
+using log4net.Util;
+using log4net.Core;
 
 namespace log4net.Layout
 {
@@ -31,20 +39,28 @@ namespace log4net.Layout
 	/// Deriving classes must implement the <see cref="FormatXml"/> method.
 	/// </para>
 	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	abstract public class XmlLayoutBase : LayoutSkeleton
 	{
 		#region Protected Instance Constructors
 
 		/// <summary>
+		/// Protected constructor to support subclasses
+		/// </summary>
+		/// <remarks>
+		/// <para>
 		/// Initializes a new instance of the <see cref="XmlLayoutBase" /> class
 		/// with no location info.
-		/// </summary>
+		/// </para>
+		/// </remarks>
 		protected XmlLayoutBase() : this(false)
 		{
+			IgnoresException = false;
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="XmlLayoutBase" /> class.
+		/// Protected constructor to support subclasses
 		/// </summary>
 		/// <remarks>
 		/// <para>
@@ -62,6 +78,7 @@ namespace log4net.Layout
 		/// </remarks>
 		protected XmlLayoutBase(bool locationInfo)
 		{
+			IgnoresException = false;
 			m_locationInfo = locationInfo;
 		}
 
@@ -84,7 +101,7 @@ namespace log4net.Layout
 		/// statement will be output. 
 		/// </para>
 		/// <para>
-		/// If you are embedding this layout within an SMTPAppender
+		/// If you are embedding this layout within an <c>SMTPAppender</c>
 		/// then make sure to set the <b>LocationInfo</b> option of that 
 		/// appender as well.
 		/// </para>
@@ -94,14 +111,44 @@ namespace log4net.Layout
 			get { return m_locationInfo; }
 			set { m_locationInfo = value; }
 		}
-
+		/// <summary>
+		/// The string to replace characters that can not be expressed in XML with.
+		/// <remarks>
+		/// <para>
+		/// Not all characters may be expressed in XML. This property contains the
+		/// string to replace those that can not with. This defaults to a ?. Set it
+		/// to the empty string to simply remove offending characters. For more
+		/// details on the allowed character ranges see http://www.w3.org/TR/REC-xml/#charsets
+		/// Character replacement will occur in  the log message, the property names 
+		/// and the property values.
+		/// </para>
+		/// </remarks>
+		/// </summary>
+		public string InvalidCharReplacement
+		{
+			get {return m_invalidCharReplacement;}
+			set {m_invalidCharReplacement=value;}
+		}
 		#endregion
 
 		#region Implementation of IOptionHandler
 
 		/// <summary>
-		/// Does not do anything as options become effective immediately.
+		/// Initialize layout options
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// This is part of the <see cref="IOptionHandler"/> delayed object
+		/// activation scheme. The <see cref="ActivateOptions"/> method must 
+		/// be called on this object after the configuration properties have
+		/// been set. Until <see cref="ActivateOptions"/> is called this
+		/// object is in an undefined state and must not be used. 
+		/// </para>
+		/// <para>
+		/// If any of the configuration properties are modified then 
+		/// <see cref="ActivateOptions"/> must be called again.
+		/// </para>
+		/// </remarks>
 		override public void ActivateOptions() 
 		{
 			// nothing to do
@@ -114,45 +161,43 @@ namespace log4net.Layout
 		/// <summary>
 		/// Gets the content type output by this layout. 
 		/// </summary>
-		/// <value>As this is the XML layout, the value is always "text/xml".</value>
+		/// <value>
+		/// As this is the XML layout, the value is always <c>"text/xml"</c>.
+		/// </value>
+		/// <remarks>
+		/// <para>
+		/// As this is the XML layout, the value is always <c>"text/xml"</c>.
+		/// </para>
+		/// </remarks>
 		override public string ContentType
 		{
 			get { return "text/xml"; }
 		}
 
 		/// <summary>
-		/// The XMLLayout does handle the exception contained within
-		/// LoggingEvents. Thus, it returns <c>false</c>.
-		/// </summary>
-		override public bool IgnoresException
-		{
-			get { return false; }
-		}
-
-		/// <summary>
 		/// Produces a formatted string.
 		/// </summary>
 		/// <param name="loggingEvent">The event being logged.</param>
-		/// <returns>The formatted string.</returns>
-		override public string Format(LoggingEvent loggingEvent) 
+		/// <param name="writer">The TextWriter to write the formatted event to</param>
+		/// <remarks>
+		/// <para>
+		/// Format the <see cref="LoggingEvent"/> and write it to the <see cref="TextWriter"/>.
+		/// </para>
+		/// <para>
+		/// This method creates an <see cref="XmlTextWriter"/> that writes to the
+		/// <paramref name="writer"/>. The <see cref="XmlTextWriter"/> is passed 
+		/// to the <see cref="FormatXml"/> method. Subclasses should override the
+		/// <see cref="FormatXml"/> method rather than this method.
+		/// </para>
+		/// </remarks>
+		override public void Format(TextWriter writer, LoggingEvent loggingEvent) 
 		{
 			if (loggingEvent == null)
 			{
 				throw new ArgumentNullException("loggingEvent");
 			}
 
-			// Reset working string buffer
-			if (m_sbuf.Capacity > XmlLayoutBase.MaximumCapacity) 
-			{
-				m_sbuf = new StringBuilder(XmlLayoutBase.BufferSize);
-			} 
-			else 
-			{
-				m_sbuf.Length = 0;
-			}
-
-			StringWriter writer = new StringWriter(m_sbuf, System.Globalization.CultureInfo.InvariantCulture);
-			XmlTextWriter xmlWriter = new XmlTextWriter(writer);
+			XmlTextWriter xmlWriter = new XmlTextWriter(new ProtectCloseTextWriter(writer));
 			xmlWriter.Formatting = Formatting.None;
 			xmlWriter.Namespaces = false;
 
@@ -160,9 +205,10 @@ namespace log4net.Layout
 			FormatXml(xmlWriter, loggingEvent);
 
 			xmlWriter.WriteWhitespace(SystemInfo.NewLine);
-			xmlWriter.Close();
 
-			return m_sbuf.ToString();
+			// Close on xmlWriter will ensure xml is flushed
+			// the protected writer will ignore the actual close
+			xmlWriter.Close();
 		}
 
 		#endregion Override implementation of LayoutSkeleton
@@ -174,6 +220,12 @@ namespace log4net.Layout
 		/// </summary>
 		/// <param name="writer">The writer to use to output the event to.</param>
 		/// <param name="loggingEvent">The event to write.</param>
+		/// <remarks>
+		/// <para>
+		/// Subclasses should override this method to format
+		/// the <see cref="LoggingEvent"/> as XML.
+		/// </para>
+		/// </remarks>
 		abstract protected void FormatXml(XmlWriter writer, LoggingEvent loggingEvent);
 
 		#endregion Protected Instance Methods
@@ -181,31 +233,16 @@ namespace log4net.Layout
 		#region Private Instance Fields
   
 		/// <summary>
-		/// Output buffer appended to when <see cref="Format(LoggingEvent)" /> 
-		/// is invoked.
-		/// </summary>
-		private StringBuilder m_sbuf = new StringBuilder(XmlLayoutBase.BufferSize);
-
-		/// <summary>
 		/// Flag to indicate if location information should be included in
 		/// the XML events.
 		/// </summary>
 		private bool m_locationInfo = false;
 
+		/// <summary>
+		/// The string to replace invalid chars with
+		/// </summary>
+		private string m_invalidCharReplacement="?";
+
 		#endregion Private Instance Fields
-
-		#region Protected Static Fields
-
-		/// <summary>
-		/// Initial buffer size.
-		/// </summary>
-		protected const int BufferSize = 256;
-
-		/// <summary>
-		/// Maximum buffer size before it is recycled.
-		/// </summary>
-		protected const int MaximumCapacity = 1024;
-
-		#endregion Protected Static Fields
 	}
 }

@@ -50,9 +50,19 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="ConsoleAppenderTest.cs" />
-    <Compile Include="FileAppenderTest.cs" />
+    <Compile Include="SystemIntegrationTest.cs" />
+    <Compile Include="ConsoleAppenderUnitTest.cs" />
+    <Compile Include="FileAppenderUnitTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\log4net.csproj">
+      <Project>{181fe707-e161-4722-9f38-6aaab6faa106}</Project>
+      <Name>log4net</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

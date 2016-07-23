@@ -1,19 +1,28 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
+using System.IO;
 using System.Text;
 
-using log4net.spi;
-using log4net.helpers;
+using log4net.Util;
+using log4net.Core;
 
 namespace log4net.Layout
 {
@@ -21,46 +30,26 @@ namespace log4net.Layout
 	/// A very simple layout
 	/// </summary>
 	/// <remarks>
+	/// <para>
 	/// SimpleLayout consists of the level of the log statement,
 	/// followed by " - " and then the log message itself. For example,
 	/// <code>
 	/// DEBUG - Hello world
 	/// </code>
+	/// </para>
 	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	public class SimpleLayout : LayoutSkeleton
 	{
-		#region Constants
-
-		/// <summary>
-		/// Initial buffer size
-		/// </summary>
-  		protected const int BUF_SIZE = 256;
-
-		/// <summary>
-		/// Maximum buffer size before it is recycled
-		/// </summary>
-		protected const int MAX_CAPACITY = 1024;
-
-		#endregion
-
-		#region Member Variables
-  
-		/// <summary>
-		/// output buffer appended to when Format() is invoked
-		/// </summary>
-		private StringBuilder m_sbuf = new StringBuilder(BUF_SIZE);
-  
-		#endregion
-
 		#region Constructors
 
 		/// <summary>
 		/// Constructs a SimpleLayout
 		/// </summary>
-		/// <remarks>
-		/// </remarks>
 		public SimpleLayout()
 		{
+			IgnoresException = true;
 		}
 
 		#endregion
@@ -68,8 +57,21 @@ namespace log4net.Layout
 		#region Implementation of IOptionHandler
 
 		/// <summary>
-		/// Does not do anything as options become effective immediately.
+		/// Initialize layout options
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// This is part of the <see cref="IOptionHandler"/> delayed object
+		/// activation scheme. The <see cref="ActivateOptions"/> method must 
+		/// be called on this object after the configuration properties have
+		/// been set. Until <see cref="ActivateOptions"/> is called this
+		/// object is in an undefined state and must not be used. 
+		/// </para>
+		/// <para>
+		/// If any of the configuration properties are modified then 
+		/// <see cref="ActivateOptions"/> must be called again.
+		/// </para>
+		/// </remarks>
 		override public void ActivateOptions() 
 		{
 			// nothing to do.
@@ -80,43 +82,28 @@ namespace log4net.Layout
 		#region Override implementation of LayoutSkeleton
 
 		/// <summary>
-		/// The SimpleLayout does not handle the exception contained within
-		/// LoggingEvents. Thus, it returns <c>true</c>.
-		/// </summary>
-		override public bool IgnoresException
-		{
-			get { return true; }
-		}
-
-		/// <summary>
-		/// Produces a formatted string.
+		/// Produces a simple formatted output.
 		/// </summary>
 		/// <param name="loggingEvent">the event being logged</param>
-		/// <returns>the formatted string</returns>
-		override public string Format(LoggingEvent loggingEvent) 
+		/// <param name="writer">The TextWriter to write the formatted event to</param>
+		/// <remarks>
+		/// <para>
+		/// Formats the event as the level of the even,
+		/// followed by " - " and then the log message itself. The
+		/// output is terminated by a newline.
+		/// </para>
+		/// </remarks>
+		override public void Format(TextWriter writer, LoggingEvent loggingEvent) 
 		{
 			if (loggingEvent == null)
 			{
 				throw new ArgumentNullException("loggingEvent");
 			}
 
-			// Reset working string buffer
-			if (m_sbuf.Capacity > MAX_CAPACITY) 
-			{
-				m_sbuf = new StringBuilder(BUF_SIZE);
-			} 
-			else 
-			{
-				m_sbuf.Length = 0;
-			}
-
-			m_sbuf
-				.Append(loggingEvent.Level)
-				.Append(" - ")
-				.Append(loggingEvent.RenderedMessage)
-				.Append(SystemInfo.NewLine);
-
-			return m_sbuf.ToString();
+			writer.Write(loggingEvent.Level.DisplayName);
+			writer.Write(" - ");
+			loggingEvent.WriteRenderedMessage(writer);
+			writer.WriteLine();
 		}
 
 		#endregion

@@ -1,12 +1,20 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using System;
@@ -17,9 +25,7 @@ namespace log4net.Plugin
 	/// <summary>
 	///	A strongly-typed collection of <see cref="IPlugin"/> objects.
 	/// </summary>
-#if !NETCF
-	[Serializable]
-#endif
+	/// <author>Nicko Cadell</author>
 	public class PluginCollection : ICollection, IList, IEnumerable, ICloneable
 	{
 		#region Interfaces
@@ -27,23 +33,24 @@ namespace log4net.Plugin
 		/// <summary>
 		/// Supports type-safe iteration over a <see cref="PluginCollection"/>.
 		/// </summary>
+		/// <exclude/>
 		public interface IPluginCollectionEnumerator
 		{
 			/// <summary>
 			///	Gets the current element in the collection.
 			/// </summary>
-			IPlugin Current {get;}
+			IPlugin Current { get; }
 
 			/// <summary>
 			///	Advances the enumerator to the next element in the collection.
 			/// </summary>
-			/// <exception cref="InvalidOperationException">
-			///	The collection was modified after the enumerator was created.
-			/// </exception>
 			/// <returns>
 			///	<c>true</c> if the enumerator was successfully advanced to the next element; 
 			///	<c>false</c> if the enumerator has passed the end of the collection.
 			/// </returns>
+			/// <exception cref="InvalidOperationException">
+			///	The collection was modified after the enumerator was created.
+			/// </exception>
 			bool MoveNext();
 
 			/// <summary>
@@ -59,12 +66,7 @@ namespace log4net.Plugin
 		#region Implementation (data)
 
 		private IPlugin[] m_array;
-
 		private int m_count = 0;
-
-#if !NETCF
-		[NonSerialized]
-#endif
 		private int m_version = 0;
 
 		#endregion Implementation (data)
@@ -72,39 +74,23 @@ namespace log4net.Plugin
 		#region Static Wrappers
 
 		/// <summary>
-		///	Creates a synchronized (thread-safe) wrapper for a 
-		/// <c>PluginCollection</c> instance.
+		///	Creates a read-only wrapper for a <c>PluginCollection</c> instance.
 		/// </summary>
-		/// <returns>
-		/// A <c>PluginCollection</c> wrapper that is synchronized (thread-safe).
-		/// </returns>
-		public static PluginCollection Synchronized(PluginCollection list)
-		{
-			if(list == null)
-			{
-				throw new ArgumentNullException("list");
-			}
-			return new SyncPluginCollection(list);
-		}
-        
-		/// <summary>
-		///	Creates a read-only wrapper for a 
-		/// <c>PluginCollection</c> instance.
-		/// </summary>
+		/// <param name="list">list to create a readonly wrapper arround</param>
 		/// <returns>
 		/// A <c>PluginCollection</c> wrapper that is read-only.
 		/// </returns>
 		public static PluginCollection ReadOnly(PluginCollection list)
 		{
-			if(list == null)
-			{
-				throw new ArgumentNullException("list");
-			}
+			if(list == null) throw new ArgumentNullException("list");
+
 			return new ReadOnlyPluginCollection(list);
 		}
+
 		#endregion
 
-		#region Construction
+		#region Constructors
+
 		/// <summary>
 		///	Initializes a new instance of the <c>PluginCollection</c> class
 		///	that is empty and has the default initial capacity.
@@ -163,7 +149,8 @@ namespace log4net.Plugin
 		/// Type visible only to our subclasses
 		/// Used to access protected constructor
 		/// </summary>
-		protected enum Tag 
+		/// <exclude/>
+		protected internal enum Tag 
 		{
 			/// <summary>
 			/// A value
@@ -174,11 +161,13 @@ namespace log4net.Plugin
 		/// <summary>
 		/// Allow subclasses to avoid our default constructors
 		/// </summary>
-		/// <param name="t"></param>
-		protected PluginCollection(Tag t)
+		/// <param name="tag"></param>
+		/// <exclude/>
+		protected internal PluginCollection(Tag tag)
 		{
 			m_array = null;
 		}
+
 		#endregion
 		
 		#region Operations (type-safe ICollection)
@@ -210,7 +199,9 @@ namespace log4net.Plugin
 		public virtual void CopyTo(IPlugin[] array, int start)
 		{
 			if (m_count > array.GetUpperBound(0) + 1 - start)
+			{
 				throw new System.ArgumentException("Destination array was not long enough.");
+			}
 			
 			Array.Copy(m_array, 0, array, start, m_count); 
 		}
@@ -238,6 +229,7 @@ namespace log4net.Plugin
 		#endregion
 		
 		#region Operations (type-safe IList)
+
 		/// <summary>
 		/// Gets or sets the <see cref="IPlugin"/> at the specified index.
 		/// </summary>
@@ -273,7 +265,9 @@ namespace log4net.Plugin
 		public virtual int Add(IPlugin item)
 		{
 			if (m_count == m_array.Length)
+			{
 				EnsureCapacity(m_count + 1);
+			}
 
 			m_array[m_count] = item;
 			m_version++;
@@ -294,14 +288,15 @@ namespace log4net.Plugin
 		/// <summary>
 		/// Creates a shallow copy of the <see cref="PluginCollection"/>.
 		/// </summary>
+		/// <returns>A new <see cref="PluginCollection"/> with a shallow copy of the collection data.</returns>
 		public virtual object Clone()
 		{
-			PluginCollection newColl = new PluginCollection(m_count);
-			Array.Copy(m_array, 0, newColl.m_array, 0, m_count);
-			newColl.m_count = m_count;
-			newColl.m_version = m_version;
+			PluginCollection newCol = new PluginCollection(m_count);
+			Array.Copy(m_array, 0, newCol.m_array, 0, m_count);
+			newCol.m_count = m_count;
+			newCol.m_version = m_version;
 
-			return newColl;
+			return newCol;
 		}
 
 		/// <summary>
@@ -312,8 +307,12 @@ namespace log4net.Plugin
 		public virtual bool Contains(IPlugin item)
 		{
 			for (int i=0; i != m_count; ++i)
+			{
 				if (m_array[i].Equals(item))
+				{
 					return true;
+				}
+			}
 			return false;
 		}
 
@@ -329,8 +328,12 @@ namespace log4net.Plugin
 		public virtual int IndexOf(IPlugin item)
 		{
 			for (int i=0; i != m_count; ++i)
+			{
 				if (m_array[i].Equals(item))
+				{
 					return i;
+				}
+			}
 			return -1;
 		}
 
@@ -349,7 +352,9 @@ namespace log4net.Plugin
 			ValidateIndex(index, true); // throws
 			
 			if (m_count == m_array.Length)
+			{
 				EnsureCapacity(m_count + 1);
+			}
 
 			if (index < m_count)
 			{
@@ -424,6 +429,7 @@ namespace log4net.Plugin
 		{
 			get { return false; }
 		}
+
 		#endregion
 
 		#region Operations (type-safe IEnumerable)
@@ -436,6 +442,7 @@ namespace log4net.Plugin
 		{
 			return new Enumerator(this);
 		}
+
 		#endregion
 
 		#region Public helpers (just to mimic some nice features of ArrayList)
@@ -448,11 +455,16 @@ namespace log4net.Plugin
 		/// </value>
 		public virtual int Capacity
 		{
-			get { return m_array.Length; }
+			get 
+			{ 
+				return m_array.Length; 
+			}
 			set
 			{
 				if (value < m_count)
+				{
 					value = m_count;
+				}
 
 				if (value != m_array.Length)
 				{
@@ -478,7 +490,9 @@ namespace log4net.Plugin
 		public virtual int AddRange(PluginCollection x)
 		{
 			if (m_count + x.Count >= m_array.Length)
+			{
 				EnsureCapacity(m_count + x.Count);
+			}
 			
 			Array.Copy(x.m_array, 0, m_array, m_count, x.Count);
 			m_count += x.Count;
@@ -495,7 +509,9 @@ namespace log4net.Plugin
 		public virtual int AddRange(IPlugin[] x)
 		{
 			if (m_count + x.Length >= m_array.Length)
+			{
 				EnsureCapacity(m_count + x.Length);
+			}
 
 			Array.Copy(x, 0, m_array, m_count, x.Length);
 			m_count += x.Length;
@@ -512,7 +528,9 @@ namespace log4net.Plugin
 		public virtual int AddRange(ICollection col)
 		{
 			if (m_count + col.Count >= m_array.Length)
+			{
 				EnsureCapacity(m_count + col.Count);
+			}
 
 			foreach(object item in col)
 			{
@@ -535,9 +553,9 @@ namespace log4net.Plugin
 		#region Implementation (helpers)
 
 		/// <exception cref="ArgumentOutOfRangeException">
-		/// <para><paramref name="index"/> is less than zero.</para>
+		/// <para><paramref name="i"/> is less than zero.</para>
 		/// <para>-or-</para>
-		/// <para><paramref name="index"/> is equal to or greater than <see cref="PluginCollection.Count"/>.</para>
+		/// <para><paramref name="i"/> is equal to or greater than <see cref="PluginCollection.Count"/>.</para>
 		/// </exception>
 		private void ValidateIndex(int i)
 		{
@@ -545,22 +563,26 @@ namespace log4net.Plugin
 		}
 
 		/// <exception cref="ArgumentOutOfRangeException">
-		/// <para><paramref name="index"/> is less than zero.</para>
+		/// <para><paramref name="i"/> is less than zero.</para>
 		/// <para>-or-</para>
-		/// <para><paramref name="index"/> is equal to or greater than <see cref="PluginCollection.Count"/>.</para>
+		/// <para><paramref name="i"/> is equal to or greater than <see cref="PluginCollection.Count"/>.</para>
 		/// </exception>
 		private void ValidateIndex(int i, bool allowEqualEnd)
 		{
-			int max = (allowEqualEnd)?(m_count):(m_count-1);
+			int max = (allowEqualEnd) ? (m_count) : (m_count-1);
 			if (i < 0 || i > max)
-				throw new System.ArgumentOutOfRangeException("Index was out of range.  Must be non-negative and less than the size of the collection. [" + (object)i + "] Specified argument was out of the range of valid values.");
+			{
+				throw log4net.Util.SystemInfo.CreateArgumentOutOfRangeException("i", (object)i, "Index was out of range. Must be non-negative and less than the size of the collection. [" + (object)i + "] Specified argument was out of the range of valid values.");
+			}
 		}
 
 		private void EnsureCapacity(int min)
 		{
 			int newCapacity = ((m_array.Length == 0) ? DEFAULT_CAPACITY : m_array.Length * 2);
 			if (newCapacity < min)
+			{
 				newCapacity = min;
+			}
 
 			this.Capacity = newCapacity;
 		}
@@ -630,11 +652,12 @@ namespace log4net.Plugin
 		/// <summary>
 		/// Supports simple iteration over a <see cref="PluginCollection"/>.
 		/// </summary>
-		private class Enumerator : IEnumerator, IPluginCollectionEnumerator
+		/// <exclude/>
+		private sealed class Enumerator : IEnumerator, IPluginCollectionEnumerator
 		{
 			#region Implementation (data)
 			
-			private PluginCollection m_collection;
+			private readonly PluginCollection m_collection;
 			private int m_index;
 			private int m_version;
 			
@@ -671,20 +694,22 @@ namespace log4net.Plugin
 			/// <summary>
 			/// Advances the enumerator to the next element in the collection.
 			/// </summary>
-			/// <exception cref="InvalidOperationException">
-			/// The collection was modified after the enumerator was created.
-			/// </exception>
 			/// <returns>
 			/// <c>true</c> if the enumerator was successfully advanced to the next element; 
 			/// <c>false</c> if the enumerator has passed the end of the collection.
 			/// </returns>
+			/// <exception cref="InvalidOperationException">
+			/// The collection was modified after the enumerator was created.
+			/// </exception>
 			public bool MoveNext()
 			{
 				if (m_version != m_collection.m_version)
+				{
 					throw new System.InvalidOperationException("Collection was modified; enumeration operation may not execute.");
+				}
 
 				++m_index;
-				return (m_index < m_collection.Count) ? true : false;
+				return (m_index < m_collection.Count);
 			}
 
 			/// <summary>
@@ -694,182 +719,16 @@ namespace log4net.Plugin
 			{
 				m_index = -1;
 			}
+
 			#endregion
 	
 			#region Implementation (IEnumerator)
 			
 			object IEnumerator.Current
 			{
-				get { return (object)(this.Current); }
+				get { return this.Current; }
 			}
 			
-			#endregion
-		}
-
-		#endregion
-
-		#region Nested Syncronized Wrapper class
-
-		private class SyncPluginCollection : PluginCollection
-		{
-			#region Implementation (data)
-			private PluginCollection m_collection;
-			private object m_root;
-			#endregion
-
-			#region Construction
-
-			internal SyncPluginCollection(PluginCollection list) : base(Tag.Default)
-			{
-				m_root = list.SyncRoot;
-				m_collection = list;
-			}
-
-			#endregion
-
-			#region Type-safe ICollection
-
-			public override void CopyTo(IPlugin[] array)
-			{
-				lock(this.m_root)
-					m_collection.CopyTo(array);
-			}
-
-			public override void CopyTo(IPlugin[] array, int start)
-			{
-				lock(this.m_root)
-					m_collection.CopyTo(array,start);
-			}
-			public override int Count
-			{
-				get
-				{ 
-					lock(this.m_root)
-						return m_collection.Count;
-				}
-			}
-
-			public override bool IsSynchronized
-			{
-				get { return true; }
-			}
-
-			public override object SyncRoot
-			{
-				get { return this.m_root; }
-			}
-
-			#endregion
-
-			#region Type-safe IList
-
-			public override IPlugin this[int i]
-			{
-				get
-				{
-					lock(this.m_root)
-						return m_collection[i];
-				}
-				set
-				{
-					lock(this.m_root)
-						m_collection[i] = value; 
-				}
-			}
-
-			public override int Add(IPlugin x)
-			{
-				lock(this.m_root)
-					return m_collection.Add(x);
-			}
-            
-			public override void Clear()
-			{
-				lock(this.m_root)
-					m_collection.Clear();
-			}
-
-			public override bool Contains(IPlugin x)
-			{
-				lock(this.m_root)
-					return m_collection.Contains(x);
-			}
-
-			public override int IndexOf(IPlugin x)
-			{
-				lock(this.m_root)
-					return m_collection.IndexOf(x);
-			}
-
-			public override void Insert(int pos, IPlugin x)
-			{
-				lock(this.m_root)
-					m_collection.Insert(pos,x);
-			}
-
-			public override void Remove(IPlugin x)
-			{           
-				lock(this.m_root)
-					m_collection.Remove(x);
-			}
-
-			public override void RemoveAt(int pos)
-			{
-				lock(this.m_root)
-					m_collection.RemoveAt(pos);
-			}
-            
-			public override bool IsFixedSize
-			{
-				get {return m_collection.IsFixedSize;}
-			}
-
-			public override bool IsReadOnly
-			{
-				get {return m_collection.IsReadOnly;}
-			}
-			#endregion
-
-			#region Type-safe IEnumerable
-
-			public override IPluginCollectionEnumerator GetEnumerator()
-			{
-				lock(m_root)
-					return m_collection.GetEnumerator();
-			}
-
-			#endregion
-
-			#region Public Helpers
-
-			// (just to mimic some nice features of ArrayList)
-			public override int Capacity
-			{
-				get
-				{
-					lock(this.m_root)
-						return m_collection.Capacity;
-				}
-                
-				set
-				{
-					lock(this.m_root)
-						m_collection.Capacity = value;
-				}
-			}
-
-			public override int AddRange(PluginCollection x)
-			{
-				lock(this.m_root)
-					return m_collection.AddRange(x);
-			}
-
-			public override int AddRange(IPlugin[] x)
-			{
-				lock(this.m_root)
-					return m_collection.AddRange(x);
-			}
-
 			#endregion
 		}
 
@@ -877,11 +736,12 @@ namespace log4net.Plugin
 
 		#region Nested Read Only Wrapper class
 
-		private class ReadOnlyPluginCollection : PluginCollection
+		/// <exclude/>
+		private sealed class ReadOnlyPluginCollection : PluginCollection
 		{
 			#region Implementation (data)
 
-			private PluginCollection m_collection;
+			private readonly PluginCollection m_collection;
 
 			#endregion
 
@@ -895,6 +755,7 @@ namespace log4net.Plugin
 			#endregion
 
 			#region Type-safe ICollection
+
 			public override void CopyTo(IPlugin[] array)
 			{
 				m_collection.CopyTo(array);
@@ -906,7 +767,7 @@ namespace log4net.Plugin
 			}
 			public override int Count
 			{
-				get {return m_collection.Count;}
+				get { return m_collection.Count; }
 			}
 
 			public override bool IsSynchronized
@@ -922,6 +783,7 @@ namespace log4net.Plugin
 			#endregion
 
 			#region Type-safe IList
+
 			public override IPlugin this[int i]
 			{
 				get { return m_collection[i]; }
@@ -972,6 +834,7 @@ namespace log4net.Plugin
 			{
 				get { return true; }
 			}
+
 			#endregion
 
 			#region Type-safe IEnumerable

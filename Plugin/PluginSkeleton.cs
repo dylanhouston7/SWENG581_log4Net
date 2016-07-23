@@ -1,12 +1,20 @@
-#region Copyright
+#region Apache License
 //
-// This framework is based on log4j see http://jakarta.apache.org/log4j
-// Copyright (C) The Apache Software Foundation. All rights reserved.
+// Licensed to the Apache Software Foundation (ASF) under one or more 
+// contributor license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership. 
+// The ASF licenses this file to you under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with 
+// the License. You may obtain a copy of the License at
 //
-// This software is published under the terms of the Apache Software
-// License version 1.1, a copy of which has been included with this
-// distribution in the LICENSE.txt file.
-// 
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 #endregion
 
 using log4net.Repository;
@@ -14,15 +22,28 @@ using log4net.Repository;
 namespace log4net.Plugin
 {
 	/// <summary>
-	/// Class from which logger repository plugins derive.
+	/// Base implementation of <see cref="IPlugin"/>
 	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// Default abstract implementation of the <see cref="IPlugin"/>
+	/// interface. This base class can be used by implementors
+	/// of the <see cref="IPlugin"/> interface.
+	/// </para>
+	/// </remarks>
+	/// <author>Nicko Cadell</author>
+	/// <author>Gert Driesen</author>
 	public abstract class PluginSkeleton : IPlugin
 	{
 		#region Protected Instance Constructors
 
 		/// <summary>
-		/// Initializes a new Plugin with the specified name.
+		/// Constructor
 		/// </summary>
+		/// <param name="name">the name of the plugin</param>
+		/// <remarks>
+		/// Initializes a new Plugin with the specified name.
+		/// </remarks>
 		protected PluginSkeleton(string name)
 		{
 			m_name = name;
@@ -33,11 +54,22 @@ namespace log4net.Plugin
 		#region Implementation of IPlugin
 
 		/// <summary>
-		/// Gets or sets the name of this plugin.
+		/// Gets or sets the name of the plugin.
 		/// </summary>
 		/// <value>
-		/// The name of this plugin.
+		/// The name of the plugin.
 		/// </value>
+		/// <remarks>
+		/// <para>
+		/// Plugins are stored in the <see cref="PluginMap"/>
+		/// keyed by name. Each plugin instance attached to a
+		/// repository must be a unique name.
+		/// </para>
+		/// <para>
+		/// The name of the plugin must not change one the 
+		/// plugin has been attached to a repository.
+		/// </para>
+		/// </remarks>
 		public virtual string Name 
 		{ 
 			get { return m_name; }
@@ -64,6 +96,13 @@ namespace log4net.Plugin
 		/// <summary>
 		/// Is called when the plugin is to shutdown.
 		/// </summary>
+		/// <remarks>
+		/// <para>
+		/// This method is called to notify the plugin that 
+		/// it should stop operating and should detach from
+		/// the repository.
+		/// </para>
+		/// </remarks>
 		public virtual void Shutdown()
 		{
 		}
@@ -73,12 +112,17 @@ namespace log4net.Plugin
 		#region Protected Instance Properties
 
 		/// <summary>
-		/// Gets or sets the <see cref="ILoggerRepository" /> that this plugin is 
-		/// attached to.
+		/// The repository for this plugin
 		/// </summary>
 		/// <value>
 		/// The <see cref="ILoggerRepository" /> that this plugin is attached to.
 		/// </value>
+		/// <remarks>
+		/// <para>
+		/// Gets or sets the <see cref="ILoggerRepository" /> that this plugin is 
+		/// attached to.
+		/// </para>
+		/// </remarks>
 		protected virtual ILoggerRepository LoggerRepository 
 		{
 			get { return this.m_repository;	}
