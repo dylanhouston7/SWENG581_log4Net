@@ -7,6 +7,9 @@ using log4net.Core;
 
 namespace log4netUnitTest
 {
+    /// <summary>
+    /// Unit tests the FileAppender class.
+    /// </summary>
     [TestClass]
     public class FileAppenderTest
     {
@@ -32,8 +35,7 @@ namespace log4netUnitTest
 
             _fileAppender.LockingModel = new FileAppender.MinimalLock();
             _fileAppender.ActivateOptions();
-            
-
+  
             _logger.AddAppender(_fileAppender);
 
         }
@@ -144,107 +146,58 @@ namespace log4netUnitTest
 
         }
 
-        // MOVE THESE TEST TO INTEGRATION
+        /// <summary>
+        /// Validates that the encoding can be properly set for a file appender.
+        /// </summary>
         [TestMethod]
-        public void Should_Write_Info()
+        public void SetEncodingFlag()
         {
-
-            //Arrange
-            var testString = "Write INFO Message";
-            var outputString = string.Empty;
-
-            var mockWriter = new Mock<TextWriter>(MockBehavior.Strict);
-            mockWriter.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => outputString = s);
-
-            _fileAppender.Layout = _basicLayout;
-
-            var level = new log4net.Filter.LevelMatchFilter();
-            level.LevelToMatch = Level.Info;
-
-
-            _fileAppender.AddFilter(level);
-
-            _fileAppender.LockingModel = new FileAppender.MinimalLock();
-
-            //Assign mock writer
-            _fileAppender.Writer = mockWriter.Object;
-            _fileAppender.ActivateOptions();
-
-            //Act
-            _log.Info(testString);
-
-            //Assert
-            Assert.AreEqual(testString, outputString);
-
+            FileAppender fileAppender = new FileAppender();
+            fileAppender.Encoding = System.Text.Encoding.ASCII;
+            Assert.AreEqual(System.Text.Encoding.ASCII, fileAppender.Encoding);
         }
 
+        /// <summary>
+        /// Validates that the append to file flag can be properly set for a file appender.
+        /// </summary>
         [TestMethod]
-        public void Should_Write_Debug()
+        public void SetAppendToFileFlag()
         {
-            //Arrange
-            var testString = "Write DEBUG Message";
-            var outputString = string.Empty;
+            FileAppender fileAppender = new FileAppender();
+            fileAppender.AppendToFile = true;
+            Assert.AreEqual(true, fileAppender.AppendToFile);
 
-            var mockWriter = new Mock<TextWriter>(MockBehavior.Strict);
-            mockWriter.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => outputString = s);
-
-            _fileAppender.Layout = _basicLayout;
-
-            //Assign mock writer
-            _fileAppender.Writer = mockWriter.Object;
-            _fileAppender.ActivateOptions();
-
-            //Act
-            _log.Debug(testString);
-
-            //Assert
-            Assert.AreEqual(testString, outputString);
+            fileAppender.AppendToFile = false;
+            Assert.AreEqual(false, fileAppender.AppendToFile);
         }
 
+        /// <summary>
+        /// Ensures that the locking model is set to a default value, whenever the FileAppender
+        /// does not have a locking model already set.
+        /// </summary>
         [TestMethod]
-        public void Should_Write_Fatal()
+        public void EnsureLockingModelDefaultSetForActivateOptions()
         {
-            //Arrange
-            var testString = "Write FATAL Message";
-            var outputString = string.Empty;
-
-            var mockWriter = new Mock<TextWriter>(MockBehavior.Strict);
-            mockWriter.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => outputString = s);
-
-            _fileAppender.Layout = _basicLayout;
-
-            //Assign mock writer
-            _fileAppender.Writer = mockWriter.Object;
-            _fileAppender.ActivateOptions();
-
-            //Act
-            _log.Fatal(testString);
-
-            //Assert
-            Assert.AreEqual(testString, outputString);
+            FileAppender fileAppender = new FileAppender();
+            fileAppender.ActivateOptions();
+            FileAppender.ExclusiveLock exclusiveLock = new FileAppender.ExclusiveLock();
+            Assert.AreEqual(exclusiveLock.GetType(), fileAppender.LockingModel.GetType());
         }
 
+        /// <summary>
+        /// Ensures that the locking model is NOT set to a default value, whenever the FileAppender
+        /// does have a locking model already set.
+        /// </summary>
         [TestMethod]
-        public void Should_Write_Warn()
+        public void EnsureLockingModelDefaultNotSetForActivateOptions()
         {
-            //Arrange
-            var testString = "Write WARN Message";
-            var outputString = string.Empty;
-
-            var mockWriter = new Mock<TextWriter>(MockBehavior.Strict);
-            mockWriter.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => outputString = s);
-
-            _fileAppender.Layout = _basicLayout;
-
-            //Assign mock writer
-            _fileAppender.Writer = mockWriter.Object;
-            _fileAppender.ActivateOptions();
-
-            //Act
-            _log.Warn(testString);
-
-            //Assert
-            Assert.AreEqual(testString, outputString);
+            FileAppender fileAppender = new FileAppender();
+            fileAppender.LockingModel = new FileAppender.ExclusiveLock();
+            fileAppender.ActivateOptions();
+            
+            FileAppender.InterProcessLock interProcessLock = new FileAppender.InterProcessLock();
+            Assert.AreNotEqual(interProcessLock.GetType(), fileAppender.LockingModel.GetType());
         }
+
     }
 }
