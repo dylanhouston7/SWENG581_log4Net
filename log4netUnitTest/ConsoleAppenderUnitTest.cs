@@ -62,6 +62,20 @@ namespace log4netUnitTest
         }
 
         [TestMethod]
+        public void TestConsoleAppender_TargetPropertySet_ConsoleError()
+        {
+            // Arrange
+            ConsoleAppender c = new ConsoleAppender();
+            string expectedString = "Console.Error"; 
+
+            // Act 
+            c.Target = expectedString; 
+
+            // Assert
+            Assert.AreEqual(expectedString,c.Target);
+        }
+
+        [TestMethod]
         public void TestConsoleAppender_DoAppendLogEvent_ConsoleOut()
         {
             // Arrange            
