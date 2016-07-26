@@ -190,7 +190,7 @@ namespace log4netUnitTest
         /// </summary>
         [TestMethod]
         public void EnsureLockingModelDefaultNotSetForActivateOptions()
-        {
+    {
             FileAppender fileAppender = new FileAppender();
             fileAppender.LockingModel = new FileAppender.ExclusiveLock();
             fileAppender.ActivateOptions();
