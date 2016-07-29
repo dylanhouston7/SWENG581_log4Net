@@ -181,6 +181,14 @@ namespace log4net.Appender
 			get { return true; }
 		}
 
+        /// <summary>
+        /// Added to assist in testing CFG/DFG
+        /// </summary>
+	    public bool getWriteToErrorStream
+	    {
+	        get { return m_writeToErrorStream; }
+	    }
+
 		#endregion Override implementation of AppenderSkeleton
 
 		#region Public Static Fields

@@ -66,13 +66,30 @@ namespace log4netUnitTest
         {
             // Arrange
             ConsoleAppender c = new ConsoleAppender();
-            string expectedString = "Console.Error"; 
+            string expectedString = "Console.Error";
+            bool expectedBool = true;
 
             // Act 
             c.Target = expectedString; 
 
             // Assert
             Assert.AreEqual(expectedString,c.Target);
+            Assert.AreEqual(expectedBool, c.getWriteToErrorStream);
+        }
+
+        [TestMethod]
+        public void TestConsoleAppender_TargetPropertySet_ConsoleOut()
+        {
+            //Arrange
+            ConsoleAppender c = new ConsoleAppender();
+            string expectedString = "Console.Out";
+            bool expectedBool = false;
+            //Act
+            c.Target = expectedString;
+
+            //Assert
+            Assert.AreEqual(expectedString, c.Target);
+            Assert.AreEqual(expectedBool, c.getWriteToErrorStream);
         }
 
         [TestMethod]

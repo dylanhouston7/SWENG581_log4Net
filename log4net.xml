@@ -2898,6 +2898,11 @@
             </para>
             </remarks>
         </member>
+        <member name="P:log4net.Appender.ConsoleAppender.getWriteToErrorStream">
+            <summary>
+            Added to assist in testing CFG/DFG
+            </summary>
+        </member>
         <member name="F:log4net.Appender.ConsoleAppender.ConsoleOut">
             <summary>
             The <see cref="P:log4net.Appender.ConsoleAppender.Target"/> to use when writing to the Console 
