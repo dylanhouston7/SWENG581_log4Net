@@ -150,7 +150,7 @@ namespace log4netUnitTest
         /// Validates that the encoding can be properly set for a file appender.
         /// </summary>
         [TestMethod]
-        public void SetEncodingFlag()
+        public void TestSetEncodingFlag()
         {
             FileAppender fileAppender = new FileAppender();
             fileAppender.Encoding = System.Text.Encoding.ASCII;
@@ -161,7 +161,7 @@ namespace log4netUnitTest
         /// Validates that the append to file flag can be properly set for a file appender.
         /// </summary>
         [TestMethod]
-        public void SetAppendToFileFlag()
+        public void TestSetAppendToFileFlag()
         {
             FileAppender fileAppender = new FileAppender();
             fileAppender.AppendToFile = true;
@@ -176,7 +176,7 @@ namespace log4netUnitTest
         /// does not have a locking model already set.
         /// </summary>
         [TestMethod]
-        public void EnsureLockingModelDefaultSetForActivateOptions()
+        public void TestEnsureLockingModelDefaultSetForActivateOptions()
         {
             FileAppender fileAppender = new FileAppender();
             fileAppender.ActivateOptions();
@@ -189,7 +189,7 @@ namespace log4netUnitTest
         /// does have a locking model already set.
         /// </summary>
         [TestMethod]
-        public void EnsureLockingModelDefaultNotSetForActivateOptions()
+        public void TestEnsureLockingModelDefaultNotSetForActivateOptions()
     {
             FileAppender fileAppender = new FileAppender();
             fileAppender.LockingModel = new FileAppender.ExclusiveLock();
