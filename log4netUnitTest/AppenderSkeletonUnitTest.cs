@@ -51,8 +51,14 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: IsAsSeverAsThreshold
+        /// Test Case AppenderSkeleton-1: IsAsSeverAsThreshold with null Threshold
         /// </summary>
+        /// <remarks>
+        /// Path: 1-2(T)-5
+        /// Input Vector:
+        /// m_threshold == null
+        /// level == NA
+        /// </remarks>        
         [TestMethod]
         public void TestAppenderSkeleton_IsAsSeverAsThreshold_NullThreshold()
         {
@@ -69,8 +75,14 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: IsAsSeverAsThreshold
+        /// Test Case AppenderSkeleton-2: IsAsSeverAsThreshold with Level greater than Threshold
         /// </summary>
+        /// <remarks>
+        /// Path: 1-2(F)-3(T)-5
+        /// Input Vector:
+        /// m_threshold == 0
+        /// level == 1
+        /// </remarks>   
         [TestMethod]
         public void TestAppenderSkeleton_IsAsSeverAsThreshold_LevelGreaterThanThreshold()
         {
@@ -87,8 +99,14 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: IsAsSeverAsThreshold
+        /// Test Case AppenderSkeleton-3: IsAsSeverAsThreshold with Level equal to Threshold
         /// </summary>
+        /// <remarks>
+        /// Path: 1-2(F)-3(T)-5
+        /// Input Vector:
+        /// m_threshold == 0
+        /// level == 1
+        /// </remarks>     
         [TestMethod]
         public void TestAppenderSkeleton_IsAsSeverAsThreshold_LevelEqualToThreshold()
         {
@@ -105,8 +123,14 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: IsAsSeverAsThreshold
+        /// Test Case AppenderSkeleton-4: IsAsSeverAsThreshold with Level less than Threshold
         /// </summary>
+        /// <remarks>
+        /// Path: 1-2(F)-3(F)-4
+        /// Input Vector:
+        /// m_threshold == 1
+        /// level == 0
+        /// </remarks>   
         [TestMethod]
         public void TestAppenderSkeleton_IsAsSeverAsThreshold_LevelLessThanThreshold()
         {
@@ -123,8 +147,13 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: AddFilter
+        /// Test Case AppenderSkeleton-5: AddFilter with null filter
         /// </summary>
+        /// <remarks>
+        /// Path: 1-2(T)-6
+        /// Input Vector:
+        /// filter == null
+        /// </remarks>   
         [TestMethod]
         public void TestAppenderSkeleton_AddFilter_NullFilter()
         {
@@ -152,7 +181,7 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: AddFilter
+        /// Test Case AppenderSkeleton-6: AddFilter add three different filter types and check for correct added ordering
         /// </summary>
         [TestMethod]
         public void TestAppenderSkeleton_AddFilter_NonNullFilters()
@@ -180,7 +209,7 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: ClearFilters
+        /// Test Case AppenderSkeleton-7: ClearFilters
         /// </summary>
         [TestMethod]
         public void TestAppenderSkeleton_ClearFilters()
@@ -197,7 +226,7 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: FilterEvent
+        /// Test Case AppenderSkeleton-8: FilterEvent
         /// </summary>
         [TestMethod]
         public void TestAppenderSkeleton_FilterEvent_IsNotAsSeverAsThreshold()
@@ -217,7 +246,7 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: FilterEvent
+        /// Test Case AppenderSkeleton-9: FilterEvent
         /// </summary>
         [TestMethod]
         public void TestAppenderSkeleton_FilterEvent_Deny()
@@ -238,7 +267,7 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: FilterEvent
+        /// Test Case AppenderSkeleton-10: FilterEvent
         /// </summary>
         [TestMethod]
         public void TestAppenderSkeleton_FilterEvent_NeutralAccept()
@@ -264,7 +293,7 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: RequiresLayout Get
+        /// Test Case AppenderSkeleton-11: RequiresLayout Get
         /// </summary>
         [TestMethod]
         public void TestAppenderSkeleton_RequiresLayoutPropertyGet()
@@ -280,7 +309,7 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: Threshold Get-Set
+        /// Test Case AppenderSkeleton-12: Threshold Get-Set
         /// </summary>
         [TestMethod]
         public void TestAppenderSkeleton_ThresholdProperty()
@@ -297,7 +326,7 @@ namespace log4netUnitTest
         }
 
         /// <summary>
-        /// Test Case AppenderSkeleton-X: Layout Get-Set
+        /// Test Case AppenderSkeleton-13: Layout Get-Set
         /// </summary>
         [TestMethod]
         public void TestAppenderSkeleton_LayoutPropertySetGet_Layout()
