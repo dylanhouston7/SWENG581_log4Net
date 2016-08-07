@@ -19,7 +19,17 @@ namespace log4netUnitTest.Stubs
         /// <param name="loggingEvent">The logging event</param>
         protected override void Append(LoggingEvent loggingEvent)
         {
-            throw new NotImplementedException();
+            return;
+        }
+
+        /// <summary>
+        /// Returns a string value for the logging event
+        /// </summary>
+        /// <param name="loggingEvent">The logging event to turn into a string</param>
+        /// <returns>The logging event as a string</returns>
+        public string RenderLoggingEventTest(LoggingEvent loggingEvent)
+        {
+            return this.RenderLoggingEvent(loggingEvent);
         }
     }
 }
