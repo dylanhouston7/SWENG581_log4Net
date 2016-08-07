@@ -7,6 +7,7 @@ using log4net.Core;
 using System;
 using log4netUnitTest.Stubs;
 using log4net.Util;
+using System.Collections.Generic;
 
 namespace log4netUnitTest
 {
@@ -421,5 +422,108 @@ namespace log4netUnitTest
             Assert.IsInstanceOfType(stub.ErrorHandler, typeof(OnlyOnceErrorHandler));
         }
 
+        /// <summary>
+        /// Ensures that the DoAppend method works without throwing errors or exceptions under normal operation.
+        /// </summary>
+        [TestMethod]
+        public void TestDoAppend()
+        {
+            StubAppender stub = new StubAppender();
+            LoggingEventData eventData = new LoggingEventData();
+            StubLoggingEvent loggingEvent = new StubLoggingEvent(eventData);
+            stub.DoAppend(loggingEvent);
+            OnlyOnceErrorHandler errorHandler = (OnlyOnceErrorHandler)stub.ErrorHandler;
+            Assert.IsNull(errorHandler.ErrorMessage);
+        }
+
+        /// <summary>
+        /// Ensures that the DoAppend method throws an error when the appender is closed before the method is invoked.
+        /// </summary>
+        [TestMethod]
+        public void TestDoAppendWhenClosed()
+        {
+            StubAppender stub = new StubAppender();
+            LoggingEventData eventData = new LoggingEventData();
+            StubLoggingEvent loggingEvent = new StubLoggingEvent(eventData);
+            stub.Close();
+            stub.DoAppend(loggingEvent);
+            OnlyOnceErrorHandler errorHandler = (OnlyOnceErrorHandler)stub.ErrorHandler;
+            Assert.IsNotNull(errorHandler.ErrorMessage);
+        }
+
+
+        /// <summary>
+        /// Ensures that the DoAppend method works without throwing errors or exceptions under normal operation.
+        /// </summary>
+        [TestMethod]
+        public void TestDoAppendArray()
+        {
+            StubAppender stub = new StubAppender();
+            LoggingEventData eventData = new LoggingEventData();
+
+            // Build an array of two stublogging events.
+            List<StubLoggingEvent> list = new List<StubLoggingEvent>();
+            list.Add(new StubLoggingEvent(eventData));
+            list.Add(new StubLoggingEvent(eventData));
+
+            // Call the DoAppend overload method
+            stub.DoAppend(list.ToArray());
+
+            OnlyOnceErrorHandler errorHandler = (OnlyOnceErrorHandler)stub.ErrorHandler;
+            Assert.IsNull(errorHandler.ErrorMessage);
+        }
+
+        /// <summary>
+        /// Ensures that the DoAppend method throws an error when the appender is closed before the method is invoked.
+        /// </summary>
+        [TestMethod]
+        public void TestDoAppendArrayWhenClosed()
+        {
+            StubAppender stub = new StubAppender();
+            LoggingEventData eventData = new LoggingEventData();
+            stub.Close();
+
+            // Build an array of two stublogging events.
+            List<StubLoggingEvent> list = new List<StubLoggingEvent>();
+            list.Add(new StubLoggingEvent(eventData));
+            list.Add(new StubLoggingEvent(eventData));
+
+            // Call the DoAppend overload method
+            stub.DoAppend(list.ToArray());
+
+            OnlyOnceErrorHandler errorHandler = (OnlyOnceErrorHandler)stub.ErrorHandler;
+            Assert.IsNotNull(errorHandler.ErrorMessage);
+        }
+
+
+        /// <summary>
+        /// Ensures that the program can render a string from a logging event object.
+        /// </summary>
+        [TestMethod]
+        public void TestRenderLoggingEvent()
+        {
+            StubAppender stub = new StubAppender();
+            LoggingEventData eventData = new LoggingEventData();
+            stub.Layout = new log4net.Layout.PatternLayout("%m");
+            StubLoggingEvent loggingEvent = new StubLoggingEvent(eventData);
+            string loggingEventString = stub.RenderLoggingEventTest(loggingEvent);
+
+            // The string should be an empty string, since we didn't set any data in the loggingEvent object.
+            Assert.AreEqual("", loggingEventString);
+        }
+
+        /// <summary>
+        /// Ensures that an exception is thrown when a layout is not set and the logging event is about to be rendered as a string.
+        /// </summary>
+        [ExpectedException(typeof(InvalidOperationException))]
+        [TestMethod]
+        public void TestRenderLoggingEventException()
+        {
+            StubAppender stub = new StubAppender();
+            LoggingEventData eventData = new LoggingEventData();
+            StubLoggingEvent loggingEvent = new StubLoggingEvent(eventData);
+            string loggingEventString = stub.RenderLoggingEventTest(loggingEvent);
+
+        }
     }
 }
