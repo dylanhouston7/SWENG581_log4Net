@@ -200,5 +200,30 @@ namespace log4netUnitTest
             // Assert            
 
         }
+
+        /// <summary>
+        /// Tests the getter for the error handler property
+        /// </summary>
+        [TestMethod]
+        public void TestGetErrorHandler()
+        {
+            TextWriterAppender appender = new TextWriterAppender();
+            IErrorHandler handler = appender.ErrorHandler;
+            Assert.IsNotNull(handler);
+        }
+
+        /// <summary>
+        /// Tests the getter for the error handler property
+        /// </summary>
+        [TestMethod]
+        public void TestSetErrorHandler()
+        {
+            TextWriterAppender appender = new TextWriterAppender();
+            OnlyOnceErrorHandler errorHandler = new OnlyOnceErrorHandler();
+            appender.ErrorHandler = errorHandler;
+
+            // Reference comparison
+            Assert.AreEqual(errorHandler, appender.ErrorHandler);        
+        }
     }
 }

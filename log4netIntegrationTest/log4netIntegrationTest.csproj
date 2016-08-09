@@ -63,6 +63,7 @@
     <Compile Include="FileAppenderIntegrationTest.cs" />
     <Compile Include="Stubs\StubAppender.cs" />
     <Compile Include="Stubs\StubLoggingEvent.cs" />
+    <Compile Include="TextWriterAppenderIntegrationTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\log4net.csproj">
