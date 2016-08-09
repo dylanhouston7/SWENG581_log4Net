@@ -2,7 +2,7 @@
 using log4net.Util;
 using log4netIntegrationTest.Stubs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
+using System;
 
 namespace log4netIntegrationTest
 {
@@ -35,6 +35,36 @@ namespace log4netIntegrationTest
 
             // Check for any error message
             Assert.IsNotNull(onlyOnceErrorHandler.ErrorMessage);
+        }
+
+
+        /// <summary>
+        /// Ensures that the program can render a string from a logging event object.
+        /// </summary>
+        [TestMethod]
+        public void TestRenderLoggingEvent()
+        {
+            StubAppender stub = new StubAppender();
+            LoggingEventData eventData = new LoggingEventData();
+            stub.Layout = new log4net.Layout.PatternLayout("%m");
+            StubLoggingEvent loggingEvent = new StubLoggingEvent(eventData);
+            string loggingEventString = stub.RenderLoggingEventTest(loggingEvent);
+
+            // The string should be an empty string, since we didn't set any data in the loggingEvent object.
+            Assert.AreEqual("", loggingEventString);
+        }
+
+        /// <summary>
+        /// Ensures that an exception is thrown when a layout is not set and the logging event is about to be rendered as a string.
+        /// </summary>
+        [ExpectedException(typeof(InvalidOperationException))]
+        [TestMethod]
+        public void TestRenderLoggingEventException()
+        {
+            StubAppender stub = new StubAppender();
+            LoggingEventData eventData = new LoggingEventData();
+            StubLoggingEvent loggingEvent = new StubLoggingEvent(eventData);
+            string loggingEventString = stub.RenderLoggingEventTest(loggingEvent);
         }
     }
 }

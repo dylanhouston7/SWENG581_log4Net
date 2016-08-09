@@ -59,6 +59,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="AppenderSkeletonIntegrationTest.cs" />
+    <Compile Include="ConsoleAppenderIntegrationTest.cs" />
     <Compile Include="FileAppenderIntegrationTest.cs" />
     <Compile Include="Stubs\StubAppender.cs" />
     <Compile Include="Stubs\StubLoggingEvent.cs" />
