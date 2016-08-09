@@ -1,9 +1,11 @@
-﻿using log4net;
-using log4net.Appender;
+﻿using log4net.Appender;
 using log4net.Core;
+using log4net.Layout;
+using log4net.Util;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace log4netIntegrationTest
 {
@@ -13,131 +15,49 @@ namespace log4netIntegrationTest
     [TestClass]
     public class FileAppenderIntegrationTest
     {
-        ILog _log;
-        log4net.Repository.Hierarchy.Logger _logger;
-        FileAppender _fileAppender;
-        log4net.Layout.PatternLayout _basicLayout = new log4net.Layout.PatternLayout("%m");
-        string _fileName = "tempfile.txt";
-
-        [TestInitialize]
-        public void Setup()
-        {
-            _log = LogManager.GetLogger("fileappenderlog");
-            _logger = (log4net.Repository.Hierarchy.Logger)_log.Logger;
-            _logger.Hierarchy.Configured = true;
-            _logger.Level = _logger.Hierarchy.LevelMap["Info"];
-
-            _fileAppender = new FileAppender();
-
-            _fileAppender.Name = "fileAppender";
-            _fileAppender.File = _fileName;
-            _fileAppender.AppendToFile = true;
-
-            _fileAppender.LockingModel = new FileAppender.MinimalLock();
-            _fileAppender.ActivateOptions();
-
-            _logger.AddAppender(_fileAppender);
-        }
-
+        /// <summary>
+        /// Ensures that the DoAppend method works without throwing errors or exceptions under normal operation.
+        /// Reads the resulting file from the file system to ensure that the message was correctly appended to the file.
+        /// </summary>
         [TestMethod]
-        public void IntegrationTest_Should_Write_Info()
+        public void SystemTestDoAppendArray()
         {
-            //Arrange
-            var testString = "Write INFO Message";
-            var outputString = string.Empty;
+            string input = "Test Log Message";
+            StringBuilder result = new StringBuilder();
+            StringWriter writer = new StringWriter(result);
 
-            var mockWriter = new Mock<TextWriter>(MockBehavior.Strict);
-            mockWriter.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => outputString = s);
+            FileAppender appender = new FileAppender();
+            appender.Writer = writer;
+            appender.Layout = new PatternLayout("%message");
+            appender.File = "tempfile.txt";
 
-            _fileAppender.Layout = _basicLayout;
+            // Store the path of the appender
+            string outputPath = appender.File;
 
-            var level = new log4net.Filter.LevelMatchFilter();
-            level.LevelToMatch = Level.Info;
+            // Delete the log file if it already exists.
+            if (File.Exists(appender.File))
+            {
+                File.Delete(appender.File);
+            }
 
+            LoggingEventData logData = new LoggingEventData();
+            logData.Message = input;
 
-            _fileAppender.AddFilter(level);
+            List<LoggingEvent> list = new List<LoggingEvent>();
+            list.Add(new LoggingEvent(logData));
 
-            _fileAppender.LockingModel = new FileAppender.MinimalLock();
+            appender.ActivateOptions();
+            // Call the DoAppend overload method
+            appender.DoAppend(list.ToArray());
 
-            //Assign mock writer
-            _fileAppender.Writer = mockWriter.Object;
-            _fileAppender.ActivateOptions();
+            appender.Close();
 
-            //Act
-            _log.Info(testString);
+            // Ensure there are no errors and that the result matches what we fed the TextWriterAppender.
+            OnlyOnceErrorHandler errorHandler = (OnlyOnceErrorHandler)appender.ErrorHandler;
+            Assert.IsNull(errorHandler.ErrorMessage);
 
-            //Assert
-            Assert.AreEqual(testString, outputString);
-
-        }
-
-        [TestMethod]
-        public void Integration_Test_Should_Write_Debug()
-        {
-            //Arrange
-            var testString = "Write DEBUG Message";
-            var outputString = string.Empty;
-
-            var mockWriter = new Mock<TextWriter>(MockBehavior.Strict);
-            mockWriter.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => outputString = s);
-
-            _fileAppender.Layout = _basicLayout;
-
-            //Assign mock writer
-            _fileAppender.Writer = mockWriter.Object;
-            _fileAppender.ActivateOptions();
-
-            //Act
-            _log.Debug(testString);
-
-            //Assert
-            Assert.AreEqual(testString, outputString);
-        }
-
-        [TestMethod]
-        public void Integration_TestShould_Write_Fatal()
-        {
-            //Arrange
-            var testString = "Write FATAL Message";
-            var outputString = string.Empty;
-
-            var mockWriter = new Mock<TextWriter>(MockBehavior.Strict);
-            mockWriter.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => outputString = s);
-
-            _fileAppender.Layout = _basicLayout;
-
-            //Assign mock writer
-            _fileAppender.Writer = mockWriter.Object;
-            _fileAppender.ActivateOptions();
-
-            //Act
-            _log.Fatal(testString);
-
-            //Assert
-            Assert.AreEqual(testString, outputString);
-        }
-
-        [TestMethod]
-        public void Integration_Test_Should_Write_Warn()
-        {
-            //Arrange
-            var testString = "Write WARN Message";
-            var outputString = string.Empty;
-
-            var mockWriter = new Mock<TextWriter>(MockBehavior.Strict);
-            mockWriter.Setup(x => x.Write(It.IsAny<string>())).Callback<string>(s => outputString = s);
-
-            _fileAppender.Layout = _basicLayout;
-
-            //Assign mock writer
-            _fileAppender.Writer = mockWriter.Object;
-            _fileAppender.ActivateOptions();
-
-            //Act
-            _log.Warn(testString);
-
-            //Assert
-            Assert.AreEqual(testString, outputString);
+            string fileText = File.ReadAllText(outputPath);
+            Assert.AreEqual(input, fileText);
         }
     }
 }

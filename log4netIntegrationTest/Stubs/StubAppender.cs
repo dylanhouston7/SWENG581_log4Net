@@ -19,7 +19,7 @@ namespace log4netIntegrationTest.Stubs
         /// <param name="loggingEvent">The logging event</param>
         protected override void Append(LoggingEvent loggingEvent)
         {
-            throw new NotImplementedException();
+            return;
         }
 
         /// <summary>

@@ -124,7 +124,7 @@ namespace log4netIntegrationTest
         /// Ensures that the DoAppend method works without throwing errors or exceptions under normal operation.
         /// </summary>
         [TestMethod]
-        public void TestDoAppendArray()
+        public void IntegrationTestDoAppendArray()
         {
             string input = "Test Log Message";
             StringBuilder result = new StringBuilder();
