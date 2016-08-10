@@ -31,18 +31,26 @@ namespace log4netUnitTest
             // TODO
         }
 
+        /// <summary>
+        /// Test Case TextWriterAppender-1: Tests setting the immediate flush to false
+        /// </summary>
+        /// <remarks>
+        /// Input Vector:
+        /// m_immediateFlush == False
+        /// </remarks>   
         [TestMethod]
         public void TestTextWriterAppender_Append_ImmediateFlushFalse()
         {
             // Arrange
+            bool flush_result;
             String input = "Test Log Message";
             StringBuilder result = new StringBuilder();
             StringWriter writer = new StringWriter(result);
 
             TextWriterAppender cut = new TextWriterAppender();
-            cut.Writer = writer;
             cut.Layout = new PatternLayout("%message");
             cut.ImmediateFlush = false;
+            cut.Writer = writer;
 
             LoggingEventData logData = new LoggingEventData();
             logData.Message = input;
@@ -50,23 +58,25 @@ namespace log4netUnitTest
 
             // Act
             cut.DoAppend(logEvent);
+            flush_result = cut.ImmediateFlush;
 
             // Assert            
-            Assert.AreEqual("", result.ToString());
+            Assert.AreEqual("", result, "Output is non-empty: " + result.ToString());
+            Assert.AreEqual(false, flush_result, "Flush value mismatch");
         }
 
         /// <summary>
-        /// Test Case TextWriterAppender-2: 
+        /// Test Case TextWriterAppender-2: Tests setting the immediate flush to true
         /// </summary>
         /// <remarks>
-        /// Path: 1-2-3(T)-4-5
         /// Input Vector:
-        /// m_immediateFlush == False
+        /// m_immediateFlush == True
         /// </remarks>   
         [TestMethod]
         public void TestTextWriterAppender_Append_ImmediateFlushTrue()
         {
             // Arrange
+            bool flush_result;
             String input = "Test Log Message";
             StringBuilder result = new StringBuilder();
             StringWriter writer = new StringWriter(result);
@@ -82,8 +92,10 @@ namespace log4netUnitTest
 
             // Act
             cut.DoAppend(logEvent);
+            flush_result = cut.ImmediateFlush;
 
             // Assert            
+            Assert.AreEqual(true, flush_result);
             Assert.AreEqual(input, result.ToString(), "Actual Result: " + result.ToString());
         }
 
@@ -175,11 +187,28 @@ namespace log4netUnitTest
         public void TestTextWriterAppender_WriteFooter()
         {
             // Arrange
+            String input_footer = "Log Footer";
+            String input_message = "Log Message";
+            StringBuilder result = new StringBuilder();
+            StringWriter writer = new StringWriter(result);
 
-            // Act
+            TextWriterAppender cut = new TextWriterAppender();
+            PatternLayout patt_layout = new PatternLayout("%message");
+            patt_layout.Footer = input_footer;
+            cut.Layout = patt_layout;
+            cut.ImmediateFlush = true;
+            cut.Writer = writer;
+
+            LoggingEventData logData = new LoggingEventData();
+            logData.Message = input_message;
+            LoggingEvent logEvent = new LoggingEvent(logData);
+
+            // Act            
+            cut.DoAppend(logEvent);
+            cut.Close();
 
             // Assert            
-
+            Assert.AreEqual(input_message + input_footer, result.ToString(), "Actual Result: " + result.ToString());
         }
 
         /// <summary>
@@ -194,11 +223,27 @@ namespace log4netUnitTest
         public void TestTextWriterAppender_WriteHeader()
         {
             // Arrange
+            String input_header = "Log Header";
+            String input_message = "Log Message";
+            StringBuilder result = new StringBuilder();
+            StringWriter writer = new StringWriter(result);
+
+            TextWriterAppender cut = new TextWriterAppender();
+            PatternLayout patt_layout = new PatternLayout("%message");
+            patt_layout.Header = input_header;
+            cut.Layout = patt_layout;
+            cut.ImmediateFlush = true;
+            cut.Writer = writer;
+
+            LoggingEventData logData = new LoggingEventData();
+            logData.Message = input_message;
+            LoggingEvent logEvent = new LoggingEvent(logData);
 
             // Act
+            cut.DoAppend(logEvent);
 
             // Assert            
-
+            Assert.AreEqual(input_header + input_message, result.ToString(), "Actual Result: " + result.ToString());
         }
 
         /// <summary>
