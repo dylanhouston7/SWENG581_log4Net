@@ -225,5 +225,19 @@ namespace log4netUnitTest
             // Reference comparison
             Assert.AreEqual(errorHandler, appender.ErrorHandler);        
         }
+
+        [TestMethod]
+        public void TestSetImmediateFlushFalse()
+        {
+            //Arrange
+            TextWriterAppender appender = new TextWriterAppender();
+            bool expectedBool = false;
+            
+            //Act
+            appender.ImmediateFlush = expectedBool;
+            
+            //Assert
+            Assert.AreEqual(appender.ImmediateFlush,expectedBool);
+        }
     }
 }
