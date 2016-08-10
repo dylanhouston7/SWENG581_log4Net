@@ -284,5 +284,16 @@ namespace log4netUnitTest
             //Assert
             Assert.AreEqual(appender.ImmediateFlush,expectedBool);
         }
+
+        [TestMethod]
+       // [ExpectedException(typeof(void))]
+        public void TestSetErrorHandlerNull()
+        {
+            TextWriterAppender appender = new TextWriterAppender();
+
+            //Set ErrorHandler to null and the method prints to the log saying you've
+            //Tried to set ErrorHandler to null, which passes the test. 
+            appender.ErrorHandler = null;
+        }
     }
 }
